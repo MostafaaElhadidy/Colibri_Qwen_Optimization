@@ -2,7 +2,7 @@
 
 **Model:** Qwen3-Coder-30B-A3B (colibri int4 gs64) on the `qwen36` engine.
 **Machine:** i9-14900HX, Windows 11 + WSL2 with 12 GB RAM (16 GB host), the same as [part 1](expert_cache_research.md).
-**Code:** branch `feature/expert-cache-followup` on top of `efe1c249`, uncommitted working tree. Frozen original: `bin/qwen36.baseline` (commit `e0db083c`, sha256 `36ff0d1f…`).
+**Code:** branch `feature/expert-cache-followup` on top of `a17cc25a` (the part-1 notes commit; the code is in the commits that follow it). Frozen original: `bin/qwen36.baseline` (commit `e0db083c`, sha256 `36ff0d1f…`).
 **Reproduction kit and raw data:** [`benchmarks/expert_cache_research/`](../benchmarks/expert_cache_research/README.md) (`phase0/`, `ab2/`, `chunk/`, `grouped/`, `order/`).
 
 ## Summary
