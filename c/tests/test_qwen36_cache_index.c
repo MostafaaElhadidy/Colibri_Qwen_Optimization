@@ -159,6 +159,108 @@ static void check_batch_matches_serial(void) {
     g_test_load = NULL;
 }
 
+
+/* COLI_Q36_PREFILL_WAVES: a prompt chunk computed expert by expert must give the
+ * token-at-a-time path's bits, compute every routed (token, k) pair exactly once,
+ * and read no expert twice in one layer pass. Real expert_ffn kernels on synthetic
+ * int4 experts: the stub writes each expert's bytes from its id. */
+enum { WV_D = 64, WV_F = 64, WV_K = 8, WV_E = 24 };
+static int g_wv_loads[WV_E];
+static void wv_fill(int eid, Slot *s) {
+    unsigned h = 2166136261u ^ (unsigned)eid * 16777619u;
+    size_t nw = (size_t)3 * WV_F * WV_D / 2;
+    for (size_t i = 0; i < nw; i++) { h ^= h << 13; h ^= h >> 17; h ^= h << 5; s->pw[i] = (uint8_t)h; }
+    for (int i = 0; i < 3 * WV_F; i++) { h ^= h << 13; h ^= h >> 17; h ^= h << 5; s->gs[i] = 0.002f + (h % 1000) * 1e-5f; }
+}
+static void wv_stub_load(Model *m, int layer, int eid, Slot *s) {
+    (void)m; (void)layer;
+    pthread_mutex_lock(&g_stub_mx); g_wv_loads[eid]++; pthread_mutex_unlock(&g_stub_mx);
+    CHECK(s->eid == -1, "a wave miss was read into a slot that was not hidden");
+    wv_fill(eid, s);
+}
+static void wv_model(Model *m, int cap) {
+    init_cache(m, WV_E, cap);
+    m->c.hidden = WV_D; m->c.inter = WV_F; m->c.topk = WV_K; m->c.expert_gs = 64;
+    m->is_pinned = calloc(WV_E, 1);
+    LCache *lc = &m->cache[0];
+    for (int i = 0; i < cap; i++) {   /* the planar slots slot_ensure_allocated gives a real container */
+        Slot *s = &lc->slots[i];
+        s->pw = malloc((size_t)3 * WV_F * WV_D / 2); s->gs = malloc(sizeof(float) * 3 * WV_F);
+        s->us = s->gs + WV_F; s->ds = s->gs + 2 * WV_F; s->is_int4 = 1;
+    }
+}
+static void wv_free(Model *m) {
+    LCache *lc = &m->cache[0];
+    for (int i = 0; i < lc->cap; i++) { free(lc->slots[i].pw); free(lc->slots[i].gs); }
+    for (int l = 0; m->ehit && l < m->c.n_layers; l++) free(m->ehit[l]);
+    free(m->ehit); free(m->is_pinned); free_cache(m);
+}
+static void check_waves_case(int S, int cap, int chunk, int headroom, int qd, int passes, unsigned seed) {
+    float *x = malloc(sizeof(float) * S * WV_D), *val = malloc(sizeof(float) * S * WV_K);
+    int *idx = malloc(sizeof(int) * S * WV_K);
+    float *oa = calloc((size_t)S * WV_D, sizeof(float)), *ob = calloc((size_t)S * WV_D, sizeof(float));
+    Model a, b; wv_model(&a, cap); wv_model(&b, cap);
+    g_test_load = wv_stub_load; g_q36_miss_qd = qd;
+    unsigned rng = seed;
+    for (int pass = 0; pass < passes; pass++) {
+        for (int i = 0; i < S * WV_D; i++) x[i] = (float)((int)(xorshift(&rng) % 2001) - 1000) / 250.f;
+        for (int s = 0; s < S; s++) {                /* distinct experts, a hot set and a tail */
+            float sum = 0;
+            for (int k = 0; k < WV_K; k++) {
+                int e, dup;
+                do { unsigned v = xorshift(&rng) % 40; e = v < 24 ? (int)(v % 10) : (int)(v % WV_E);
+                     dup = 0; for (int j = 0; j < k; j++) if (idx[s * WV_K + j] == e) dup = 1; } while (dup);
+                idx[s * WV_K + k] = e; val[s * WV_K + k] = 0.05f + (xorshift(&rng) % 1000) / 1000.f; sum += val[s * WV_K + k];
+            }
+            for (int k = 0; k < WV_K; k++) val[s * WV_K + k] /= sum;
+        }
+        memset(oa, 0, sizeof(float) * S * WV_D); memset(ob, 0, sizeof(float) * S * WV_D);
+        g_q36_waves = 0;
+        moe_xf_run(&a, 0, x, S, oa, idx, val);
+        memset(g_wv_loads, 0, sizeof g_wv_loads);
+        int *seen = calloc((size_t)S * WV_K, sizeof(int)); g_test_pair_seen = seen;
+        g_q36_waves = 1; g_q36_waves_chunk = chunk; g_q36_waves_headroom = headroom;
+        uint64_t h0 = b.hits + b.miss;
+        moe_xf_run(&b, 0, x, S, ob, idx, val);
+        g_test_pair_seen = NULL;
+        CHECK(!memcmp(oa, ob, sizeof(float) * S * WV_D),
+              "S=%d cap=%d chunk=%d qd=%d pass %d: waves output differs from the token path", S, cap, chunk, qd, pass);
+        for (int i = 0; i < S * WV_K; i++)
+            CHECK(seen[i] == 1, "S=%d cap=%d chunk=%d pass %d: pair %d computed %d times", S, cap, chunk, pass, i, seen[i]);
+        if (chunk == 0)
+            for (int e = 0; e < WV_E; e++)
+                CHECK(g_wv_loads[e] <= 1, "S=%d cap=%d pass %d: expert %d read %d times in one layer pass", S, cap, pass, e, g_wv_loads[e]);
+        CHECK(b.hits + b.miss - h0 == (uint64_t)S * WV_K, "hits+miss %llu for %d routed pairs",
+              (unsigned long long)(b.hits + b.miss - h0), S * WV_K);
+        for (int i = 0; i < cap; i++) CHECK(!slot_busy(&b.cache[0].slots[i]), "a wave left slot %d held", i);
+        if (g_q36_waves_last && pass == 0 && chunk == 0 && cap - headroom >= WV_K)   /* cold cache: the last token's experts stay */
+            for (int k = 0; k < WV_K; k++)
+                CHECK(slot_indexed(&b, 0, idx[(S - 1) * WV_K + k]) != NULL,
+                      "ORDER=last: expert %d of the final token is not resident", idx[(S - 1) * WV_K + k]);
+        free(seen);
+        if (failures) break;
+    }
+    printf("qwen36 prefill waves%s: S=%d cap=%d chunk=%d headroom=%d qd=%d, %d passes: token path %llu miss, waves %llu miss, identical bits\n",
+           g_q36_waves_last ? " (order=last)" : " (order=first)", S, cap, chunk, headroom, qd, passes, (unsigned long long)a.miss, (unsigned long long)b.miss);
+    g_q36_waves = 0; g_q36_waves_chunk = 0; g_q36_waves_headroom = -1; g_test_load = NULL; g_q36_miss_qd = 0;
+    wv_free(&a); wv_free(&b); free(x); free(val); free(idx); free(oa); free(ob);
+}
+static void check_waves(void) {
+    g_q36_waves_last = 0;                             /* ORDER=first: first-seen order */
+    check_waves_case(37, 10, 0, 0, 0, 6, 11u);    /* serial loads */
+    check_waves_case(37, 10, 0, 1, 0, 6, 12u);    /* one slot of headroom */
+    check_waves_case(37, 10, 5, 0, 0, 6, 13u);    /* planned 5 tokens at a time */
+    check_waves_case(64, 9, 0, 0, 0, 4, 14u);     /* cap just above K */
+    check_waves_case(300, 12, 0, 0, 0, 2, 15u);   /* more pairs than one kernel call takes */
+    check_waves_case(9, 5, 0, 0, 0, 6, 16u);      /* cap < K: the token path runs pair by pair */
+    check_waves_case(37, 10, 0, 0, 4, 6, 17u);    /* misses through expert_hold_batch, qd=4 */
+    check_waves_case(300, 12, 64, 0, 8, 2, 18u);  /* batched, planned 64 tokens at a time */
+    g_q36_waves_last = 1;                             /* the default, last use: same bits, last token's experts resident */
+    check_waves_case(37, 10, 0, 0, 0, 6, 21u);
+    check_waves_case(300, 12, 0, 0, 8, 2, 22u);
+    check_waves_case(37, 10, 5, 1, 4, 6, 23u);
+}
+
 int main(void) {
     Model m; init_cache(&m, 6, 2); LCache *lc = &m.cache[0]; lc->n = 2;
     cache_publish(&m, 0, &lc->slots[0], 1);
@@ -181,6 +283,7 @@ int main(void) {
     free_cache(&m);
     check_victim();
     check_batch_matches_serial();
+    check_waves();
     check_lookup_scaling(44);
     check_lookup_scaling(219);
     if (failures) { fprintf(stderr,"qwen36 cache index: %d failure(s)\n", failures); return 1; }

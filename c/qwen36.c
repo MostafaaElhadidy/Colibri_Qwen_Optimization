@@ -2707,15 +2707,16 @@ static void unpack_int4_to_int8(int8_t *out, const uint8_t *raw, int64_t n)
  * in the serial miss path, the disk gives ~4x the throughput at depth 4-8 than at 1,
  * and N=8 cut TTFT 39-68% with byte-identical logits. Placement only: routing,
  * compute and output are unchanged. */
+static int g_q36_miss_qd = -1;   /* file scope so the unit test can set it */
 static int q36_miss_qd(void) {
-    static int qd = -1;
-    if (qd < 0) {
+    if (g_q36_miss_qd < 0) {
         const char *p = getenv("COLI_Q36_MISS_QD");
-        qd = p ? atoi(p) : 0;
+        int qd = p ? atoi(p) : 0;
         if (qd < 2) qd = 0;
         if (qd > 32) qd = 32;
+        g_q36_miss_qd = qd;
     }
-    return qd;
+    return g_q36_miss_qd;
 }
 
 /* COLI_Q36_FAULT_PROF=1 (diagnostic, default off): every step of a miss -- slot
@@ -3412,6 +3413,154 @@ static void qwen_shared_experts_cpu(Model *m, Layer *l, const float *x, int S,
     tm_add(S,3,tm_now()-_ts);
 }
 
+/* COLI_Q36_PREFILL_WAVES=1 (default 0 = off): a prompt chunk whose S*K routed pairs
+ * do not fit the layer cache runs expert by expert instead of token by token. The
+ * token path (moe_xf_run's per = 1) re-reads an expert for every token that routes
+ * to it once the LRU has cycled: the 514-token prompt read ~57k experts (141 GB) at
+ * cap 32 for 48 x 128 distinct ones (docs/expert_cache_research.md §4). Here every
+ * token of the chunk is routed first (moe_ex already does), the distinct experts are
+ * taken in waves of at most cap - headroom slots -- the ones already resident first,
+ * so a chunk starts from what the last one left -- and while a wave is held every
+ * (token, k) pair routed to it is computed into its own row of ctb. Then each token
+ * sums its K rows in rank order with xf_moe_combine, the statement xf_moe_add uses.
+ * Each pair's output depends on its token's row and its expert only (expert_ffn.h),
+ * so the bits are the token path's; only the reads and the cache contents change.
+ * COLI_Q36_PREFILL_WAVES_CHUNK=N plans N tokens at a time (0 = the whole chunk);
+ * COLI_Q36_PREFILL_WAVES_HEADROOM=H keeps H slots out of a wave (default 1 under
+ * PILOT, else 0). Misses load through expert_hold_batch when COLI_Q36_MISS_QD is on.
+ * Each group (residents, misses) is ordered by the expert's last use in the block:
+ * the experts the block's final tokens routed to are loaded last, so decode starts
+ * with exactly the cache the token path leaves (measured: equal decode misses in all
+ * six cells of docs/expert_cache_research_2.md §6.2). COLI_Q36_PREFILL_WAVES_ORDER=first
+ * keeps first-seen order instead (the order of that report's main matrix). Every
+ * expert is still read once either way; the bits do not change. */
+static int g_q36_waves = -1, g_q36_waves_chunk = 0, g_q36_waves_headroom = -1, g_q36_waves_last = 1;
+static struct { uint64_t blocks, waves, experts, resident, pairs; double t_hold, t_comp; } g_wv;
+static int q36_prefill_waves(void) {
+    if (g_q36_waves < 0) {
+        const char *p = getenv("COLI_Q36_PREFILL_WAVES"); g_q36_waves = p && *p == '1';
+        p = getenv("COLI_Q36_PREFILL_WAVES_CHUNK"); g_q36_waves_chunk = p ? atoi(p) : 0;
+        if (g_q36_waves_chunk < 0) g_q36_waves_chunk = 0;
+        p = getenv("COLI_Q36_PREFILL_WAVES_HEADROOM"); g_q36_waves_headroom = p ? atoi(p) : -1;
+        p = getenv("COLI_Q36_PREFILL_WAVES_ORDER"); g_q36_waves_last = !(p && !strcmp(p, "first"));
+    }
+    return g_q36_waves;
+}
+static void q36_waves_report(void) {
+    if (g_q36_waves != 1 || !g_wv.blocks) return;
+    fprintf(stderr, "[waves] %llu layer blocks, %llu waves, %llu experts (%llu resident at plan), %llu pairs"
+                    " | hold %.1f s, compute %.1f s\n",
+            (unsigned long long)g_wv.blocks, (unsigned long long)g_wv.waves, (unsigned long long)g_wv.experts,
+            (unsigned long long)g_wv.resident, (unsigned long long)g_wv.pairs, g_wv.t_hold, g_wv.t_comp);
+}
+#ifdef COLI_CACHE_INDEX_TEST
+static int *g_test_pair_seen;   /* [S*K]: how often each pair was computed */
+#endif
+/* a buffer kept for the life of the thread and grown on demand: a layer pass reuses
+ * the pages the previous one faulted in */
+static void *q36_grow(void **p, size_t *cap, size_t n) {
+    if (n > *cap) {
+        free(*p); *p = malloc(n);
+        if (!*p) { fprintf(stderr, "OOM prefill waves (%zu bytes)\n", n); exit(1); }
+        *cap = n;
+    }
+    return *p;
+}
+#define Q36_WAVE_PAIRS 256      /* pairs per kernel call: bounds the kernel's scratch */
+static void moe_xf_waves(Model *m, int layer, const float *x, int S, float *out, const int *idx, const float *val) {
+    Cfg *c = &m->c; int D = c->hidden, K = c->topk, F = c->inter, E = c->n_experts;
+    LCache *lc = &m->cache[layer];
+    int64_t gp = (int64_t)F * D / 2;
+    int hr = g_q36_waves_headroom >= 0 ? g_q36_waves_headroom : (g_pilot ? 1 : 0);
+    int W = lc->cap - hr; if (W < 1) W = 1;
+    int B = g_q36_waves_chunk > 0 && g_q36_waves_chunk < S ? g_q36_waves_chunk : S;
+    int qd = q36_miss_qd(), mode = xf_act_mode(), P = Q36_WAVE_PAIRS;
+    static _Thread_local void *b_ctb, *b_xs, *b_cs, *b_scr, *b_nxt, *b_e;
+    static _Thread_local size_t c_ctb, c_xs, c_cs, c_scr, c_nxt, c_e;
+    float *ctb = q36_grow(&b_ctb, &c_ctb, sizeof(float) * (size_t)B * K * D);   /* expert_k(x[s]) per (s,k) */
+    float *xs = q36_grow(&b_xs, &c_xs, sizeof(float) * (size_t)P * D);         /* a kernel call's rows */
+    float *cs = q36_grow(&b_cs, &c_cs, sizeof(float) * (size_t)P * D);
+    void *scratch = q36_grow(&b_scr, &c_scr, xf_moe_scratch_bytes(P, 1, D, F));
+    int *nxt = q36_grow(&b_nxt, &c_nxt, sizeof(int) * (size_t)B * K);          /* next pair of the same expert */
+    size_t per_e = sizeof(int) * 6 + 1 + sizeof(Slot *);
+    char *eb = q36_grow(&b_e, &c_e, per_e * (size_t)E + 64);
+    int *head = (int *)eb, *tail = head + E, *cnt = tail + E, *order = cnt + E, *lastu = order + E, *tmp = lastu + E;
+    Slot **wsl = (Slot **)(tmp + E); uint8_t *res = (uint8_t *)(wsl + E);
+    int ppair[Q36_WAVE_PAIRS], pidx[Q36_WAVE_PAIRS];
+    XfExpert ex[Q36_WAVE_PAIRS]; const XfExpert *exp[Q36_WAVE_PAIRS];
+    for (int t0 = 0; t0 < S; t0 += B) {
+        int nb = S - t0 < B ? S - t0 : B, np = nb * K;
+        const int *bi = idx + (int64_t)t0 * K; const float *bv = val + (int64_t)t0 * K;
+        /* the block's distinct experts in first-seen order, each with its pairs */
+        int nu = 0;
+        for (int e = 0; e < E; e++) { head[e] = -1; cnt[e] = 0; }
+        for (int i = 0; i < np; i++) {
+            int e = bi[i]; nxt[i] = -1;
+            if (e < 0 || e >= E) continue;
+            if (head[e] < 0) { head[e] = i; order[nu++] = e; } else nxt[tail[e]] = i;
+            tail[e] = i; cnt[e]++;
+        }
+        /* what the cache holds now goes first, before a miss can evict it */
+        pthread_mutex_lock(&g_pilot_mx);
+        int nr = 0;
+        for (int j = 0; j < nu; j++) { res[j] = slot_indexed(m, layer, order[j]) != NULL; nr += res[j]; }
+        pthread_mutex_unlock(&g_pilot_mx);
+        {   /* stable partition: residents, then misses, each in first-seen order */
+            int a = 0, b = nr;
+            for (int j = 0; j < nu; j++) tmp[res[j] ? a++ : b++] = order[j];
+            memcpy(order, tmp, sizeof(int) * (size_t)nu);
+        }
+        if (g_q36_waves_last) {   /* each group by last use, ascending (insertion sort, nu <= E) */
+            for (int j = 0; j < nu; j++) lastu[order[j]] = tail[order[j]];
+            for (int g0 = 0, g1 = nr; g0 < nu; g0 = g1, g1 = nu)
+                for (int j = g0 + 1; j < g1; j++) {
+                    int e = order[j], q = j;
+                    while (q > g0 && lastu[order[q - 1]] > lastu[e]) { order[q] = order[q - 1]; q--; }
+                    order[q] = e;
+                }
+        }
+        g_wv.blocks++; g_wv.experts += (uint64_t)nu; g_wv.resident += (uint64_t)nr; g_wv.pairs += (uint64_t)np;
+        for (int w0 = 0; w0 < nu; w0 += W) {
+            int nw = nu - w0 < W ? nu - w0 : W;
+            const int *wid = order + w0;
+            g_wv.waves++;
+            double th = now_s();
+            if (qd) expert_hold_batch(m, layer, wid, nw, wsl, qd);
+            else for (int j = 0; j < nw; j++) wsl[j] = expert_hold(m, layer, wid[j]);
+            double tc = now_s(); g_wv.t_hold += tc - th;
+            /* the token path looks an expert up once per pair: count the other
+             * pairs as the hits they would have been, so hits+miss stays the
+             * number of routed pairs */
+            pthread_mutex_lock(&g_pilot_mx);
+            for (int j = 0; j < nw; j++) m->hits += (uint64_t)(cnt[wid[j]] - 1);
+            pthread_mutex_unlock(&g_pilot_mx);
+            int pn = 0;
+            for (int j = 0; j < nw; j++) {
+                Slot *e = wsl[j];
+                for (int i = head[wid[j]]; i >= 0; i = nxt[i]) {
+                    ex[pn].g4 = e->pw; ex[pn].u4 = e->pw + gp; ex[pn].d4 = e->pw + 2 * gp;
+                    ex[pn].gs = e->gs; ex[pn].us = e->us; ex[pn].ds = e->ds;
+                    exp[pn] = &ex[pn]; pidx[pn] = wid[j]; ppair[pn] = i;
+                    memcpy(xs + (int64_t)pn * D, x + (int64_t)(t0 + i / K) * D, sizeof(float) * (size_t)D);
+#ifdef COLI_CACHE_INDEX_TEST
+                    if (g_test_pair_seen) g_test_pair_seen[(int64_t)t0 * K + i]++;
+#endif
+                    /* one pair per row, K = 1: the row's output is the pair's */
+                    if (++pn == P || (j == nw - 1 && nxt[i] < 0)) {
+                        xf_moe_compute(cs, xs, pn, 1, D, F, pidx, exp, mode, scratch);
+                        for (int q = 0; q < pn; q++)
+                            memcpy(ctb + (int64_t)ppair[q] * D, cs + (int64_t)q * D, sizeof(float) * (size_t)D);
+                        pn = 0;
+                    }
+                }
+            }
+            for (int j = 0; j < nw; j++) slot_release(wsl[j]);
+            g_wv.t_comp += now_s() - tc;
+        }
+        xf_moe_combine(out + (int64_t)t0 * D, nb, K, D, bi, bv, ctb);
+    }
+}
+
 /* MoE: grouped top-k routing (+ optional router bias) + shared expert.
  * Mirrors HF Qwen3 MoE: softmax(gate), optional group-limited top-k, normalized
  * weights, sum routed experts, then add the un-gated shared expert. */
@@ -3432,6 +3581,7 @@ static void moe_xf_run(Model *m, int layer, const float *x, int S, float *out, c
     int64_t gp = (int64_t)F * D / 2;
     int per = cap >= S * K ? S : 1;           /* tokens per run */
     int kper = cap >= K ? K : 1;              /* experts per run */
+    if (per == 1 && S > 1 && q36_prefill_waves()) { moe_xf_waves(m, layer, x, S, out, idx, val); return; }
     int n = per * kper;
     XfExpert *ex = malloc(sizeof(XfExpert) * (size_t)n);
     const XfExpert **exp = malloc(sizeof(XfExpert *) * (size_t)n);
@@ -5224,6 +5374,8 @@ static void generate(Model *m, const int *prompt, int np, int n_new, int *out) {
     q36_fp_phase("load");
     float *logit = step(m, prompt, np, 0);
     q36_fp_phase("prefill");
+    if (tm_on()) fprintf(stderr, "[timers] prefill cache: hit=%llu miss=%llu\n",
+                         (unsigned long long)m->hits, (unsigned long long)m->miss);
     qt_stats_mark();   /* [qtier] stats also report the hit rate from here on */
     int len = np;
     Q36Spec *sp = &g_q36_run_spec;
@@ -6935,6 +7087,7 @@ int main(int argc, char **argv) {
     tm_report();
     q36_fp_phase("decode");
     q36_fp_report();
+    q36_waves_report();
     qt_stats();
     /* qpack dispatch evidence, mirroring what the parity gates assert: which
      * path computed the routed projections (coli_metal_matmul_affine_slot

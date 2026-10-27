@@ -428,6 +428,23 @@ static inline void xf_moe_add(float *out, const float *x, int S, int K, int H, i
     }
 }
 
+/* xf_moe_add's rank-order sum over per-(s,k) outputs the caller computed itself, in
+ * whatever order or runs (qwen36's prefill waves compute a layer expert by expert):
+ * out[s] += sum_k val[s][k] * ctb[s][k], pairs with idx < 0 skipped. The statement is
+ * xf_moe_add's, so the bits are the ones a token-at-a-time xf_moe_add gives. */
+static inline void xf_moe_combine(float *out, int S, int K, int H, const int *idx,
+                                  const float *val, const float *ctb) {
+    #pragma omp parallel for schedule(static)
+    for (int s = 0; s < S; s++) {
+        float *os = out + (size_t)s * H;
+        for (int k = 0; k < K; k++) {
+            int i = s * K + k; if (idx[i] < 0) continue;
+            float w = val[i]; const float *c = ctb + (size_t)i * H;
+            for (int d = 0; d < H; d++) os[d] += w * c[d];
+        }
+    }
+}
+
 static inline void xf_moe_run(float *out, const float *x, int S, int K, int H, int F,
                               const int *idx, const float *val, const XfExpert *const *experts,
                               int mode, void *scratch) {
