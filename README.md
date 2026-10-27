@@ -21,6 +21,7 @@
   <a href="#-talk-to-the-model">💬 Chat</a> ·
   <a href="#-results">📊 Results</a> ·
   <a href="#-how-it-works">🔬 How it works</a> ·
+  <a href="https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html">📖 The story</a> ·
   <a href="docs/colibri_optimization_results.pdf">📄 PDF report</a> ·
   <a href="docs/STATUS.md">🧭 Status</a>
 </p>
@@ -53,6 +54,9 @@ This project is a research fork that measured where that streaming loses time an
   the **Windows host paging the WSL VM out** ([details](#-phase-0-what-the-page-faults-really-were)).
 - 🧪 Every claim comes from **cold, interleaved (ABBA), 3-rep** benchmarks with **bootstrap 95% confidence intervals**.
   Results that don't clear the bar are reported as *n.s.*, not as wins.
+
+> 📖 **New here?** Read [**the whole story on one page**](https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html): from the first measurement to the GLM-5.3
+> outlook, with interactive charts ([source](docs/colibri_story.html)).
 
 <p align="center">
   <img src="assets/optimization/results.svg" alt="Animated chart: time to first token and bytes read on the 514-token prompt, token at a time vs waves" width="88%">
@@ -434,6 +438,7 @@ Three pieces would carry over:
 
 | Document | What's in it |
 |---|---|
+| 📖 [**The story** (view)](https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html) · [`docs/colibri_story.html`](docs/colibri_story.html) | everything that happened, in order, on one interactive page: the original engine, each change, the proof, and GLM-5.3 |
 | 📄 [`docs/colibri_optimization_results.pdf`](docs/colibri_optimization_results.pdf) | 5-page summary for a technical reader new to colibri |
 | 🧭 [`docs/STATUS.md`](docs/STATUS.md) | where things stand, every flag, next steps |
 | 📘 [`docs/expert_cache_research.md`](docs/expert_cache_research.md) | part 1: architecture, baseline, parallel loading |
@@ -441,8 +446,8 @@ Three pieces would carry over:
 | 🧰 [`benchmarks/expert_cache_research/README.md`](benchmarks/expert_cache_research/README.md) | benchmark kit |
 | 🐦 [`README.colibri.md`](README.colibri.md) | the upstream colibri README (all engines, the `coli` launcher, the GPU backends) |
 
-The README and the PDF are generated from the result files: `python3 docs/report_src/build_readme.py` and
-`python3 docs/report_src/build_report.py`.
+The README, the PDF and the story page are generated from the result files: `python3 docs/report_src/build_readme.py`,
+`python3 docs/report_src/build_report.py` and `python3 docs/report_src/build_story.py`.
 
 ---
 

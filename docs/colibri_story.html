@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colibri Expert Loading</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with chapter numbers in a left rail on wide screens; figures run wider than the text.
+   The numbering is real: the chapters are the order things happened. */
+:root {
+  --bg: #f5f7f9;  --surface: #ffffff; --ink: #14202b; --muted: #556270; --rule: #d9e0e7;
+  --before: #2a78d6; --after: #eb6834; --accent: #1f5fae; --good: #0f7a3d; --warn: #9a3412; --tint: #e9f0f8;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e141a; --surface: #151d25; --ink: #e4ebf2; --muted: #9aa8b6; --rule: #283541;
+  --before: #3987e5; --after: #d95926; --accent: #79aef0; --good: #4cc27c; --warn: #f0a07a; --tint: #172433; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e141a; --surface: #151d25; --ink: #e4ebf2; --muted: #9aa8b6; --rule: #283541;
+  --before: #3987e5; --after: #d95926; --accent: #79aef0; --good: #4cc27c; --warn: #f0a07a; --tint: #172433; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.62 var(--body);
+       padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 40px 72px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2.3rem, 6vw, 4.1rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.45rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -0.01em; }
+h3 { font-size: 1.12rem; font-weight: 600; margin-top: 8px; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+.eyebrow { font: 500 0.78rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.16rem; color: var(--ink); max-width: 62ch; }
+.dim { color: var(--muted); }
+.hero { display: grid; gap: 18px; padding-bottom: 36px; border-bottom: 1px solid var(--rule); }
+.hero h1 .from { color: var(--before); } .hero h1 .to { color: var(--after); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 6px; }
+.stat { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.stat b { font: 800 1.6rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 0.9rem; }
+.chapter { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0 20px; padding-top: 44px; }
+.chapter > .no { font: 800 2.6rem/1 var(--display); color: var(--rule); text-align: right; padding-top: 2px; font-variant-numeric: tabular-nums; }
+.chapter > .body { display: grid; gap: 14px; min-width: 0; }
+@media (max-width: 720px) { .chapter { grid-template-columns: minmax(0, 1fr); } .chapter > .no { text-align: left; font-size: 1.6rem; } }
+.box { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; }
+.callout { background: var(--tint); border-radius: 8px; padding: 14px 18px; display: grid; gap: 8px; }
+.estimate { border: 1.5px dashed var(--warn); border-radius: 8px; padding: 14px 18px; display: grid; gap: 8px; }
+.estimate .tag { font: 600 0.75rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--warn); }
+ul, ol { margin: 0; padding-left: 1.25em; max-width: 66ch; display: grid; gap: 6px; }
+.tablewrap { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 0.74rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ci, .ns { color: var(--muted); } .ns { font-style: italic; } .worse { color: var(--warn); font-weight: 600; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink); font-family: var(--body); }
+.chart .tick { fill: var(--muted); font-size: 11px; } .chart .grid { stroke: var(--rule); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.86rem; color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font: 500 0.82rem/1.35 var(--body);
+        padding: 6px 9px; border-radius: 6px; transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap; z-index: 5; }
+.diagram { width: 100%; height: auto; display: block; }
+.diagram text { fill: var(--ink); font-family: var(--body); font-size: 13px; }
+.diagram .lane { fill: var(--surface); stroke: var(--rule); }
+.diagram .tok { fill: var(--before); } .diagram .exp { fill: var(--after); } .diagram .ln { stroke: var(--muted); }
+.diagram .lab { fill: var(--muted); font-size: 12px; }
+.timeline { display: grid; gap: 0; border-left: 2px solid var(--rule); margin-left: 6px; }
+.timeline > div { position: relative; padding: 0 0 14px 18px; }
+.timeline > div::before { content: ""; position: absolute; left: -7px; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .bar { transition: width .5s ease, x .5s ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">colibri · qwen36 engine · Qwen3-Coder-30B-A3B · cold-cache benchmarks</span>
+  <h1>From <span class="from">376</span> seconds to <span class="to">30.0</span></h1>
+  <p class="lede">How we made colibri's Qwen engine answer a 514-token prompt 13× sooner without changing a single
+  output bit. This is the story from the first measurement to the last check, what changed inside the engine, and what it means for
+  GLM-5.3-Flash.</p>
+  <div class="stats">
+    <div class="stat"><b>376 → 30.0 s</b><span>time to first token, 514-token prompt, 12-expert cache (-92%)</span></div>
+    <div class="stat"><b>283 → 35 GB</b><span>expert bytes read from the SSD for the same prompt</span></div>
+    <div class="stat"><b>172 / 172</b><span>runs with logits byte-identical to the original engine</span></div>
+  </div>
+</header>
+
+<section class="chapter" id="setup"><div class="no">1</div><div class="body">
+  <span class="eyebrow">The setting</span>
+  <h2>A model bigger than the machine</h2>
+  <p><a href="https://github.com/JustVugg/colibri">colibri</a> runs <b>Mixture-of-Experts</b> (MoE) models on ordinary computers.
+  Each layer of an MoE model holds many small feed-forward networks, the <b>experts</b>. A small <b>router</b> picks a few of them
+  for each token. Only those few run, so the model can be huge while each token stays cheap. colibri keeps a fixed number of experts
+  per layer in RAM (the <b>cap</b>) and reads any other expert from the SSD the moment the router asks for it.</p>
+  <div class="two">
+    <div class="box"><h3>The model</h3><p class="dim">Qwen3-Coder-30B-A3B on colibri's <code>qwen36</code> engine:
+    48 layers × 128 experts, 8 chosen per token. Each expert is 2.53 MiB of 4-bit weights,
+    15.2 GiB of experts in all (19 GB on disk).</p></div>
+    <div class="box"><h3>The machine</h3><p class="dim">i9-14900HX laptop, NVMe SSD, Windows 11 with WSL2 limited to 12 GB of the 16 GB.
+    The experts cannot all be in RAM, so we test cap 32 (peak 6.3 GB) and cap 12 (peak 3.9 GB,
+    a small machine).</p></div>
+  </div>
+  <p>The real target is <b>GLM-5.3-Flash</b>, a 321-billion-parameter MoE whose container is 195 GB. It does not fit here.
+  Qwen3-Coder has the same structure (routed experts streamed from disk through a per-layer cache) and does fit, so it is the
+  stand-in where every idea is measured before it is ported.</p>
+  <p class="dim">Every number on this page comes from <b>cold</b> runs: a fresh process, with the operating system's file cache emptied
+  first, so each expert really comes from the SSD. Variants run back to back in alternating order (A B B A), 3 repetitions each. A
+  change counts only when its <b>bootstrap 95% confidence interval</b> excludes zero; otherwise it is marked <span class="ns">n.s.</span></p>
+</div></section>
+
+<section class="chapter" id="baseline"><div class="no">2</div><div class="body">
+  <span class="eyebrow">Measuring the original</span>
+  <h2>The time goes to loading, not computing</h2>
+  <p>We first measured the untouched engine on three prompts (24, 161 and 514 tokens) at both caps. Two things stood out.</p>
+  <ul>
+    <li><b>Generating a token is mostly waiting for experts.</b> Fetching experts took 85–94% of every decode
+    step. Each missing expert was read on its own, one after another, while the SSD sat mostly idle.</li>
+    <li><b>Reading a prompt re-reads the same experts again and again.</b> A prompt of S tokens needs S × 8 experts per layer. When that
+    is more than the cap, the engine falls back to processing <i>one token at a time</i>, and each token evicts experts that later tokens
+    need again. The 514-token prompt read 116,777 experts (283 GB) at cap 12, for a model that has
+    only 6,144 experts in total. Its first token took 483 s.</li>
+  </ul>
+  <div class="box"><h3>The SSD was not the limit, the queue was</h3>
+  <p class="dim">Reading random whole experts at different queue depths (reads in flight at once):</p>
+  <div class="tablewrap"><table><tr><th>reads in flight</th><th>GB/s</th><th>median latency (ms)</th></tr><tr><td class="num">1</td><td class="num">0.93</td><td class="num">2.7</td></tr><tr><td class="num">2</td><td class="num">1.73</td><td class="num">2.9</td></tr><tr><td class="num">4</td><td class="num">2.59</td><td class="num">3.8</td></tr><tr><td class="num">8</td><td class="num">3.72</td><td class="num">5.2</td></tr><tr><td class="num">16</td><td class="num">4.25</td><td class="num">8.3</td></tr></table></div>
+  <p class="dim">Eight reads in flight deliver 4.0× what one does.</p></div>
+</div></section>
+
+<section class="chapter" id="parallel"><div class="no">3</div><div class="body">
+  <span class="eyebrow">First change · <code>COLI_Q36_MISS_QD=8</code></span>
+  <h2>Read a layer's missing experts together</h2>
+  <p>When a layer needs experts that are not cached, the engine now first makes every hit/miss decision in one pass, the exact
+  decisions the original makes in the same order, and then reads the misses 8 at a time. Which experts run, and which get evicted,
+  is unchanged. Only the waiting overlaps.</p>
+  <div class="box">
+    <div class="legend"><span><i style="background:var(--before)"></i>original, one read at a time</span><span><i style="background:var(--after)"></i>8 reads at a time</span></div>
+    <svg class="chart" id="chart-p1" viewBox="0 0 760 250" role="img" aria-label="Time to first token, original vs parallel loading"></svg>
+  </div>
+  <div class="tablewrap"><table><tr><th>prompt, cap</th><th>first token</th><th>change [95% CI]</th><th>tokens/s, end to end</th><th>change</th></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 32</td><td class="num">59.8 → 29.3 s</td><td class="num"><b>-51%</b> <span class="ci">[-58, -42]</span></td><td class="num">0.31 → 0.52</td><td class="num"><b>+66%</b> <span class="ci">[+32, +111]</span></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 32</td><td class="num">131 → 79.9 s</td><td class="num"><b>-39%</b> <span class="ci">[-48, -26]</span></td><td class="num">0.20 → 0.31</td><td class="num"><b>+59%</b> <span class="ci">[+25, +96]</span></td></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 12</td><td class="num">52.6 → 17.0 s</td><td class="num"><b>-68%</b> <span class="ci">[-82, -37]</span></td><td class="num">0.46 → 0.85</td><td class="num"><b>+84%</b> <span class="ci">[+32, +210]</span></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 12</td><td class="num">135 → 74.6 s</td><td class="num"><b>-45%</b> <span class="ci">[-46, -43]</span></td><td class="num">0.18 → 0.32</td><td class="num"><b>+80%</b> <span class="ci">[+70, +90]</span></td></tr></table></div>
+</div></section>
+
+<section class="chapter" id="faults"><div class="no">4</div><div class="body">
+  <span class="eyebrow">An investigation · <code>COLI_Q36_FAULT_PROF=1</code></span>
+  <h2>The page faults were a red herring</h2>
+  <p>Each cache miss still cost about twice what the disk needs. The process took ~3.0 million <b>minor page faults</b> per short
+  run (the operating system mapping a fresh 4 KiB page the first time it is touched), so faults looked like the culprit. We timed
+  every step of a miss and counted its faults:</p>
+  <div class="two">
+    <div class="box"><h3>Where the faults are</h3>
+      <div class="tablewrap"><table><tr><th>phase</th><th>minor faults</th></tr>
+      <tr><td>model load</td><td class="num">2,025,231</td></tr>
+      <tr><td>prompt: first touch of the expert cache (48 × 32 slots × 648 pages)</td><td class="num">995,289</td></tr>
+      <tr><td>decode: every miss lands in reused memory</td><td class="num"><b>0</b></td></tr></table></div></div>
+    <div class="box"><h3>Where a miss really spends time</h3>
+      <ul><li>Weight read, 2.36 MB: 8.9 ms</li>
+      <li>A <b>second read</b> for the expert's scales, which the file stores apart from its weights: 2.0 ms</li>
+      <li>Rewriting an evicted cache slot: 3.0 ms, against 0.28 ms for fresh memory, with no fault at all</li></ul></div>
+  </div>
+  <p>The slow rewrite comes from outside the program. We read the Windows host's view of the virtual machine during one run:</p>
+  <div class="tablewrap"><table><tr><th>engine memory in the VM (MB)</th><th>VM memory the host keeps in RAM (MB)</th><th>VM commit (MB)</th><th>host free RAM (MB)</th></tr><tr><td class="num">531</td><td class="num">3,351</td><td class="num">9,205</td><td class="num">2,985</td></tr><tr><td class="num">2,144</td><td class="num">6,163</td><td class="num">10,549</td><td class="num">1,383</td></tr><tr><td class="num">4,157</td><td class="num">876</td><td class="num">11,289</td><td class="num">4</td></tr><tr><td class="num">6,022</td><td class="num">984</td><td class="num">12,311</td><td class="num">36</td></tr><tr><td class="num">6,345</td><td class="num">4,528</td><td class="num">12,311</td><td class="num">1,069</td></tr><tr><td class="num">6,345</td><td class="num">6,705</td><td class="num">12,310</td><td class="num">1,033</td></tr></table></div>
+  <div class="callout"><p><b>What this means.</b> The host ran out of memory (4 MB free) and paged most of the VM out, keeping
+  876 MB of it in RAM while the engine held 4,157 MB. The least recently used cache slot is exactly the memory the host
+  had pushed out, so rewriting it waits for the host. The guest cannot see that wait. The fix is in the environment (give WSL less RAM
+  than the host can back), not in the engine.</p></div>
+  <p>A huge-page memory arena (<code>COLI_Q36_SLOT_ARENA=1</code>) removes the first-touch faults
+  (-11% to -34%), but 17 of 18 timing comparisons were not significant.
+  It stays off.</p>
+</div></section>
+
+<section class="chapter" id="waves"><div class="no">5</div><div class="body">
+  <span class="eyebrow">Second change · <code>COLI_Q36_PREFILL_WAVES=1</code></span>
+  <h2>Waves: read each expert once per prompt</h2>
+  <p>The bigger loss was the prompt re-reading experts. Waves turn the loop inside out. Instead of walking token by token, the engine
+  walks expert by expert:</p>
+  <svg class="diagram" viewBox="0 0 760 236" role="img" aria-label="Token at a time versus waves">
+    <rect class="lane" x="0" y="0" width="372" height="236" rx="8"/><rect class="lane" x="388" y="0" width="372" height="236" rx="8"/>
+    <text x="16" y="26" font-weight="600">Token at a time (original)</text>
+    <text x="404" y="26" font-weight="600">Waves</text>
+    <rect class="tok" x="24" y="52" width="30" height="18" rx="3"/><rect class="tok" x="68" y="52" width="30" height="18" rx="3"/><rect class="tok" x="112" y="52" width="30" height="18" rx="3"/><rect class="tok" x="156" y="52" width="30" height="18" rx="3"/><rect class="tok" x="200" y="52" width="30" height="18" rx="3"/><rect class="tok" x="244" y="52" width="30" height="18" rx="3"/><rect class="tok" x="288" y="52" width="30" height="18" rx="3"/><rect class="tok" x="332" y="52" width="30" height="18" rx="3"/>
+    <rect class="exp" x="24" y="108" width="30" height="18" rx="3"/><line class="ln" x1="39" y1="70" x2="39" y2="108"/><rect class="exp" x="68" y="138" width="30" height="18" rx="3"/><line class="ln" x1="83" y1="70" x2="83" y2="138"/><rect class="exp" x="112" y="168" width="30" height="18" rx="3"/><line class="ln" x1="127" y1="70" x2="127" y2="168"/><rect class="exp" x="156" y="108" width="30" height="18" rx="3"/><line class="ln" x1="171" y1="70" x2="171" y2="108"/><rect class="exp" x="200" y="138" width="30" height="18" rx="3"/><line class="ln" x1="215" y1="70" x2="215" y2="138"/><rect class="exp" x="244" y="168" width="30" height="18" rx="3"/><line class="ln" x1="259" y1="70" x2="259" y2="168"/><rect class="exp" x="288" y="108" width="30" height="18" rx="3"/><line class="ln" x1="303" y1="70" x2="303" y2="108"/><rect class="exp" x="332" y="138" width="30" height="18" rx="3"/><line class="ln" x1="347" y1="70" x2="347" y2="138"/>
+    <text class="lab" x="16" y="204">each token loads its own experts, and the cache</text><text class="lab" x="16" y="221">evicts them before the next token needs them</text>
+    <rect class="tok" x="412" y="52" width="28" height="18" rx="3"/><rect class="tok" x="452" y="52" width="28" height="18" rx="3"/><rect class="tok" x="492" y="52" width="28" height="18" rx="3"/><rect class="tok" x="532" y="52" width="28" height="18" rx="3"/><rect class="tok" x="572" y="52" width="28" height="18" rx="3"/><rect class="tok" x="612" y="52" width="28" height="18" rx="3"/><rect class="tok" x="652" y="52" width="28" height="18" rx="3"/><rect class="tok" x="692" y="52" width="28" height="18" rx="3"/>
+    <rect class="exp" x="440" y="140" width="40" height="22" rx="3"/><rect class="exp" x="530" y="140" width="40" height="22" rx="3"/><rect class="exp" x="620" y="140" width="40" height="22" rx="3"/>
+    <line class="ln" x1="426" y1="70" x2="460" y2="140"/><line class="ln" x1="466" y1="70" x2="550" y2="140"/><line class="ln" x1="506" y1="70" x2="640" y2="140"/><line class="ln" x1="546" y1="70" x2="460" y2="140"/><line class="ln" x1="586" y1="70" x2="550" y2="140"/><line class="ln" x1="626" y1="70" x2="640" y2="140"/><line class="ln" x1="666" y1="70" x2="460" y2="140"/><line class="ln" x1="706" y1="70" x2="550" y2="140"/>
+    <text class="lab" x="404" y="204">route every token first, load each expert once,</text><text class="lab" x="404" y="221">and run all the tokens that use it</text>
+  </svg>
+  <ol>
+    <li>The router runs for every token in the prompt first.</li>
+    <li>The distinct experts are grouped into <b>waves</b> no larger than the cache. Experts already in RAM go first, so nothing cached is
+    evicted before its turn.</li>
+    <li>While a wave is in RAM, every token routed to those experts is computed. Each result lands in its own (token, expert) slot.</li>
+    <li>At the end, each token adds up its 8 results <b>in the original order with the original weights</b>.</li>
+  </ol>
+  <div class="callout"><p><b>Why the output does not change by a single bit.</b> In colibri's expert kernel a token's result from one
+  expert depends only on that token and that expert. Computing it in a different batch gives the same bits, and the final sum is the
+  same statement in the same order as the original. So the model's output is identical, not merely close.</p></div>
+  <div class="box">
+    <div class="legend"><span><i style="background:var(--before)"></i>token at a time (with parallel loading)</span><span><i style="background:var(--after)"></i>with waves</span></div>
+    <h3>Time to first token</h3>
+    <svg class="chart" id="chart-wv-t" viewBox="0 0 760 300" role="img" aria-label="Time to first token, before and after waves, six prompt and cache combinations"></svg>
+    <h3>Expert bytes read from the SSD</h3>
+    <svg class="chart" id="chart-wv-gb" viewBox="0 0 760 300" role="img" aria-label="Gigabytes read, before and after waves, six prompt and cache combinations"></svg>
+  </div>
+  <div class="tablewrap"><table><tr><th>prompt, cap</th><th>first token</th><th>change [95% CI]</th><th>GB read</th><th>experts read</th><th>tokens/s end to end</th><th>decode tokens/s</th></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 32</td><td class="num">40.8 → 20.9 s</td><td class="num"><b>-49%</b> <span class="ci">[-68, -7]</span></td><td class="num">21.0 → 20.3</td><td class="num">6,629 → 6,289</td><td class="num">+12% <span class="ns">n.s.</span></td><td class="num">-15% <span class="ns">n.s.</span></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 32</td><td class="num">82.8 → 27.2 s</td><td class="num"><b>-67%</b> <span class="ci">[-74, -58]</span></td><td class="num">50.5 → 23.3</td><td class="num">18,843 → 7,432</td><td class="num"><b>+72%</b> <span class="ci">[+35, +110]</span></td><td class="num"><b>-28%</b> <span class="ci">[-48, -1]</span> <span class="worse">worse</span></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 32</td><td class="num">221 → 47.0 s</td><td class="num"><b>-79%</b> <span class="ci">[-85, -71]</span></td><td class="num">141 → 25.8</td><td class="num">56,703 → 8,363</td><td class="num"><b>+186%</b> <span class="ci">[+131, +250]</span></td><td class="num">-8% <span class="ns">n.s.</span></td></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 12</td><td class="num">24.3 → 9.0 s</td><td class="num"><b>-63%</b> <span class="ci">[-75, -44]</span></td><td class="num">32.9 → 27.6</td><td class="num">11,658 → 9,377</td><td class="num">+58% <span class="ns">n.s.</span></td><td class="num">+20% <span class="ns">n.s.</span></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 12</td><td class="num">117 → 18.0 s</td><td class="num"><b>-85%</b> <span class="ci">[-89, -77]</span></td><td class="num">102 → 32.2</td><td class="num">40,440 → 11,203</td><td class="num"><b>+252%</b> <span class="ci">[+102, +452]</span></td><td class="num">+51% <span class="ns">n.s.</span></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 12</td><td class="num">376 → 30.0 s</td><td class="num"><b>-92%</b> <span class="ci">[-94, -90]</span></td><td class="num">283 → 34.8</td><td class="num">116,777 → 12,261</td><td class="num"><b>+571%</b> <span class="ci">[+407, +794]</span></td><td class="num">+48% <span class="ns">n.s.</span></td></tr></table></div>
+  <p class="dim">The baseline here already has parallel loading, so these gains stack on chapter 3. Reading the prompt now costs about one read per
+  distinct expert per layer. Decode (generating the tokens after the first) reads only a few experts per token and is unchanged within the noise.</p>
+
+  <h3>Three follow-up questions</h3>
+  <div class="box"><p><b>How many tokens should be planned at once?</b> All of them. 514-token prompt, mean of 2 cold runs:</p>
+  <div class="tablewrap"><table><tr><th>tokens planned at once</th><th>cap 32: GB read</th><th>first token (s)</th><th>cap 12: GB read</th><th>first token (s)</th></tr><tr><td>32</td><td class="num">86.3</td><td class="num">239</td><td class="num">121.0</td><td class="num">221</td></tr><tr><td>64</td><td class="num">64.8</td><td class="num">231</td><td class="num">87.5</td><td class="num">154</td></tr><tr><td>128</td><td class="num">47.0</td><td class="num">157</td><td class="num">62.3</td><td class="num">115</td></tr><tr><td>256</td><td class="num">33.8</td><td class="num">115</td><td class="num">45.9</td><td class="num">56</td></tr><tr><td>whole prompt</td><td class="num">25.9</td><td class="num">68</td><td class="num">35.1</td><td class="num">53</td></tr></table></div></div>
+  <div class="box"><p><b>Which experts should be left in RAM for generating the answer?</b> The ones the last prompt tokens used, the
+  same ones the original leaves behind. Ordering waves by each expert's last use does exactly that, and it is now the default.
+  Decode misses (counts are deterministic):</p>
+  <div class="tablewrap"><table><tr><th>prompt, cap</th><th>original</th><th>waves, first-seen order</th><th>waves, last-use order</th></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 32</td><td class="num">3,271</td><td class="num">3,441</td><td class="num"><b>3,271</b></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 32</td><td class="num">1,870</td><td class="num">2,532</td><td class="num"><b>1,870</b></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 32</td><td class="num">2,164</td><td class="num">2,756</td><td class="num"><b>2,164</b></td></tr><tr><td>short <span class="dim">(24 tok)</span>, cap 12</td><td class="num">6,383</td><td class="num">6,529</td><td class="num"><b>6,383</b></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 12</td><td class="num">6,053</td><td class="num">6,303</td><td class="num"><b>6,053</b></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 12</td><td class="num">6,410</td><td class="num">6,654</td><td class="num"><b>6,410</b></td></tr></table></div></div>
+  <div class="box"><p><b>Can the compute part get faster too?</b> A grouped kernel (<code>COLI_Q36_PREFILL_GROUPED=1</code>) passes over an
+  expert's weights once for 4 tokens. Each token keeps its exact arithmetic order, so it is exact as well. It cuts compute by
+  17% on the long prompt at cap 32, but compute is only 10 s of a 49.8 s first token here,
+  so the first token does not measurably move:</p>
+  <div class="tablewrap"><table><tr><th>prompt, cap</th><th>expert compute in prefill</th><th>first token change</th></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 32</td><td class="num">4.7 → 4.9 s</td><td class="num">0% <span class="ns">n.s.</span></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 32</td><td class="num">10.1 → 8.4 s</td><td class="num">0% <span class="ns">n.s.</span></td></tr><tr><td>medium <span class="dim">(161 tok)</span>, cap 12</td><td class="num">3.7 → 3.3 s</td><td class="num"><b>+58%</b> <span class="ci">[+11, +126]</span> <span class="worse">worse</span></td></tr><tr><td>long <span class="dim">(514 tok)</span>, cap 12</td><td class="num">8.5 → 7.8 s</td><td class="num">-3% <span class="ns">n.s.</span></td></tr></table></div></div>
+</div></section>
+
+<section class="chapter" id="correct"><div class="no">6</div><div class="body">
+  <span class="eyebrow">Proof</span>
+  <h2>Same model, same answers</h2>
+  <ul>
+    <li>Every run wrote the model's final scores over the whole vocabulary (the <b>logits</b>) to a file. We compared their SHA-256 and the
+    generated text with the <b>frozen original binary</b>: <b>172 runs of the modified engine, 0 differences</b>,
+    across every variant, prompt and cache size, with every flag off and on. The short prompt at cap 32 gives <code>0306e8f2207cbc0a…</code> every time.</li>
+    <li>Unit tests run real expert kernels on synthetic experts. They check that waves are bit-identical to token-at-a-time, that every
+    (token, expert) pair is computed exactly once, and that no expert is read twice in a layer.</li>
+    <li>Cache decisions are deterministic: hit and miss counts are identical across the repetitions of each variant.</li>
+  </ul>
+</div></section>
+
+<section class="chapter" id="changes"><div class="no">7</div><div class="body">
+  <span class="eyebrow">What changed in the engine</span>
+  <h2>Everything sits behind a switch</h2>
+  <p>All changes are environment flags that are off by default. With every flag off, the engine is the original, bit for bit.</p>
+  <div class="tablewrap"><table>
+    <tr><th>flag</th><th>what it does</th><th>verdict</th></tr>
+    <tr><td><code>COLI_Q36_MISS_QD=8</code></td><td>read a layer's missing experts 8 at a time</td><td>use it</td></tr>
+    <tr><td><code>COLI_Q36_PREFILL_WAVES=1</code></td><td>expert-major prompt processing, cached experts first, last-use order</td><td>use it</td></tr>
+    <tr><td><code>COLI_Q36_PREFILL_WAVES_CHUNK=N</code></td><td>plan N tokens at once (0 = whole prompt)</td><td>keep 0</td></tr>
+    <tr><td><code>COLI_Q36_PREFILL_GROUPED=1</code></td><td>exact 4-token kernel inside waves</td><td>no gain here</td></tr>
+    <tr><td><code>COLI_Q36_SLOT_ARENA=1</code></td><td>expert cache in 2 MiB huge pages</td><td>no gain here</td></tr>
+    <tr><td><code>COLI_Q36_FAULT_PROF=1</code></td><td>diagnostic: faults and time per step of a miss</td><td>diagnostics</td></tr>
+  </table></div>
+  <p class="dim">Code: <code>c/qwen36.c</code> (loading, waves, flags), <code>c/expert_ffn.h</code> (the fixed-order sum and the 4-token kernel),
+  <code>c/tests/test_qwen36_cache_index.c</code> (tests).</p>
+</div></section>
+
+<section class="chapter" id="glm"><div class="no">8</div><div class="body">
+  <span class="eyebrow">The real target</span>
+  <h2>Will it help GLM-5.3-Flash?</h2>
+  <p>We read GLM-5.3's engine (<code>c/glm53.c</code>) before writing any code, so the design could be ported. It already does part of the job:</p>
+  <div class="two">
+    <div class="box"><h3>Already there</h3><ul>
+      <li>A layer's missing experts are read in parallel.</li>
+      <li>Prompt processing is already expert by expert, but only inside a <b>128-token window</b> (<code>GLM53_PREFILL_CHUNK</code>).</li>
+      <li>Experts are read straight into their cache slot, with no repacking.</li></ul></div>
+    <div class="box"><h3>What would carry over</h3><ul>
+      <li><b>Cached experts first.</b> Today a window's experts go in first-seen order, so an expert already in RAM can be evicted before its turn.</li>
+      <li><b>A larger planning window.</b> 128 tokens means an expert used across a long prompt is re-read in every window.</li>
+      <li><b>A fixed-order sum.</b> GLM-5.3 adds expert results in processing order, so reordering would shift the last bits; per-(token, expert) results summed in a fixed order keep it exact.</li>
+      <li><b>Last-use order</b>, so the answer starts with the right experts cached.</li></ul></div>
+  </div>
+  <div class="estimate"><span class="tag">Estimate, not a measurement</span>
+    <p>On Qwen with waves, planning 128 tokens at a time read 1.8× (cap 32) and 1.8× (cap 12) the bytes of planning the
+    whole 514-token prompt. If GLM-5.3 behaves the same way, a larger window would cut its prompt-time expert reads by roughly
+    44–45% on ~500-token prompts, more on longer ones, and not at all on prompts under 128 tokens.
+    Cached-first ordering helps most when consecutive windows or requests share experts.</p>
+    <p><b>This must be measured on the cloud instance.</b> GLM-5.3 has different expert counts and sizes, different routing and a different
+    memory budget; none of these numbers transfer automatically.</p></div>
+</div></section>
+
+<section class="chapter" id="open"><div class="no">9</div><div class="body">
+  <span class="eyebrow">Honest limits</span>
+  <h2>What isn't proven yet</h2>
+  <ul>
+    <li><b>Decode speed.</b> Three repetitions cannot resolve it under this host's noise. One waves cell measured −28% (medium prompt, cap 32)
+    with first-seen order. The last-use order that is now the default makes its decode cache identical to the original's
+    (2,532 → 1,870 misses), but its own timing test was mixed.</li>
+    <li><b>The machine.</b> The host was short of memory in nearly every run, so absolute times drift between sessions. Only back-to-back
+    comparisons are claimed.</li>
+    <li><b>Not measured.</b> Server (warm) mode, colibri's predictive prefetch (PILOT) together with waves, and the GPU paths, which keep the original code.</li>
+    <li><b>Cold start.</b> 26 of 176 runs began with up to 4.3 MB of the model still cached
+    (the rule is exactly 0), about one expert's worth.</li>
+  </ul>
+  <h3>Next steps</h3>
+  <div class="timeline">
+    <div><b>Port to GLM-5.3:</b> cached-first waves, the fixed-order sum and a larger window in <code>glm53.c</code>, then measure on the cloud
+    instance with the same cold, alternating protocol and the same bit-exact check.</div>
+    <div><b>Re-measure decode</b> on a host with spare RAM, with 6 or more repetitions.</div>
+    <div><b>One disk read per expert:</b> merge or overlap the scale read with the weight read.</div>
+    <div><b>Decide on defaults:</b> whether waves should be on by default (today it is off, as the project's rules require).</div>
+  </div>
+</div></section>
+
+<footer>
+  <span>Built on <a href="https://github.com/JustVugg/colibri">colibri</a> by Vincenzo Fornaro (Apache-2.0). Work and measurements:
+  Mostafa Elhadidy · <a href="https://github.com/MostafaaElhadidy/Colibri_Qwen_Optimization">github.com/MostafaaElhadidy/Colibri_Qwen_Optimization</a></span>
+  <span>Generated by <code>docs/report_src/build_story.py</code> from <code>benchmarks/expert_cache_research/</code>. Full reports:
+  <code>docs/expert_cache_research.md</code>, <code>docs/expert_cache_research_2.md</code>, <code>docs/colibri_optimization_results.pdf</code>.</span>
+</footer>
+</div>
+<div id="tip" hidden></div>
+<script>
+const DATA = {"wv": {"short|32": {"a": 40.8, "b": 20.9, "gbA": 21.004055893333334, "gbB": 20.26542830933333, "d": -48.8, "lo": -67.7, "hi": -6.6}, "medium|32": {"a": 82.8, "b": 27.2, "gbA": 50.505191424, "gbB": 23.322677248, "d": -67.2, "lo": -74.3, "hi": -57.6}, "long|32": {"a": 221.0, "b": 47.0, "gbA": 140.77479594666664, "gbB": 25.826496512, "d": -78.7, "lo": -84.8, "hi": -70.8}, "short|12": {"a": 24.3, "b": 8.98, "gbA": 32.894701568, "gbB": 27.555183274666668, "d": -63.0, "lo": -75.4, "hi": -43.9}, "medium|12": {"a": 117.0, "b": 18.0, "gbA": 101.51853397333333, "gbB": 32.19397563733333, "d": -84.6, "lo": -89.2, "hi": -77.3}, "long|12": {"a": 376.0, "b": 30.0, "gbA": 282.7225934506667, "gbB": 34.80154112, "d": -92.0, "lo": -94.0, "hi": -89.7}}, "p1": {"short|32": {"a": 59.8, "b": 29.3}, "medium|32": {"a": 131.0, "b": 79.9}, "short|12": {"a": 52.6, "b": 17.0}, "medium|12": {"a": 135.0, "b": 74.6}}, "plen": {"short": 24, "medium": 161, "long": 514}};
+const tip = document.getElementById('tip');
+function showTip(e, html) { tip.innerHTML = html; tip.hidden = false; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
+function hideTip() { tip.hidden = true; }
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+const fmt = v => v >= 100 ? Math.round(v).toLocaleString() : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+function niceStep(max) { for (const s of [1,2,5,10,20,25,50,100,200,250,500,1000]) if (max / s <= 5) return s; return 1000; }
+/* paired horizontal bars on one shared linear scale from 0; hover shows the values */
+function bars(svg, rows, unit, opts) {
+  svg.innerHTML = '';
+  /* draw at the on-screen width so text stays at its real size on a phone */
+  const W = Math.max(300, Math.round(svg.getBoundingClientRect().width) || 760);
+  const narrow = W < 520, left = narrow ? Math.min(132, W * 0.42) : (opts.left || 170), right = narrow ? 58 : 70;
+  const bar = 13, gap = 3, gg = 16, top = 8;
+  const H = top + rows.length * (2 * bar + gap + gg) + 24;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const vmax = Math.max(...rows.flatMap(r => [r.a, r.b])), sc = (W - left - right) / vmax, step = niceStep(vmax);
+  for (let t = 0; t <= vmax * 1.0001; t += step) {
+    const x = left + t * sc;
+    el('line', {x1: x, y1: top - 4, x2: x, y2: H - 20, class: 'grid'}, svg);
+    el('text', {x, y: H - 6, class: 'tick', 'text-anchor': 'middle'}, svg).textContent = t;
+  }
+  el('text', {x: W - 4, y: H - 6, class: 'tick', 'text-anchor': 'end'}, svg).textContent = unit;
+  let y = top;
+  rows.forEach(r => {
+    el('text', {x: left - 10, y: y + bar + 4, 'text-anchor': 'end', 'font-size': narrow ? 11.5 : 13}, svg).textContent = narrow ? r.short : r.label;
+    [[r.a, 'var(--before)', 0, r.la], [r.b, 'var(--after)', bar + gap, r.lb]].forEach(([v, col, dy, who]) => {
+      const w = Math.max(v * sc, 2), rr = Math.min(4, w / 2);
+      const p = el('path', {d: `M${left},${y+dy} h${w-rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${bar-2*rr} a${rr},${rr} 0 0 1 -${rr},${rr} h-${w-rr} z`, fill: col}, svg);
+      el('text', {x: left + w + 6, y: y + dy + bar - 2, 'font-size': 12}, svg).textContent = fmt(v) + ' ' + unit;
+      const hit = el('rect', {x: left, y: y + dy - 1, width: W - left - right + 60, height: bar + 2, fill: 'transparent'}, svg);
+      hit.addEventListener('mousemove', e => showTip(e, `${r.label} · ${who}: <b>${fmt(v)} ${unit}</b>`));
+      hit.addEventListener('mouseleave', hideTip);
+    });
+    y += 2 * bar + gap + gg;
+  });
+}
+const nm = k => { const [p, c] = k.split('|'); return `${p} (${DATA.plen[p]} tok), cap ${c}`; };
+const sn = k => { const [p, c] = k.split('|'); return `${DATA.plen[p]} tok, cap ${c}`; };
+bars(document.getElementById('chart-p1'), Object.entries(DATA.p1).map(([k, v]) => ({label: nm(k), short: sn(k), a: v.a, b: v.b, la: 'original', lb: '8 at a time'})), 's', {left: 190});
+const wvRows = (fa, fb) => Object.entries(DATA.wv).map(([k, v]) => ({label: nm(k), short: sn(k), a: v[fa], b: v[fb], la: 'token at a time', lb: 'waves'}));
+bars(document.getElementById('chart-wv-t'), wvRows('a', 'b'), 's', {left: 190});
+bars(document.getElementById('chart-wv-gb'), wvRows('gbA', 'gbB'), 'GB', {left: 190});
+function drawAll() {
+  bars(document.getElementById('chart-p1'), Object.entries(DATA.p1).map(([k, v]) => ({label: nm(k), short: sn(k), a: v.a, b: v.b, la: 'original', lb: '8 at a time'})), 's', {left: 190});
+  bars(document.getElementById('chart-wv-t'), wvRows('a', 'b'), 's', {left: 190});
+  bars(document.getElementById('chart-wv-gb'), wvRows('gbA', 'gbB'), 'GB', {left: 190});
+}
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
+</script>
+</body>
+</html>
