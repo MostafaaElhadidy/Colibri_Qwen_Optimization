@@ -203,6 +203,7 @@ def build():
 
 <p align="center">
   <a href="#-quick-start">🚀 Quick start</a> ·
+  <a href="#-talk-to-the-model">💬 Chat</a> ·
   <a href="#-results">📊 Results</a> ·
   <a href="#-how-it-works">🔬 How it works</a> ·
   <a href="docs/colibri_optimization_results.pdf">📄 PDF report</a> ·
@@ -248,6 +249,7 @@ This project is a research fork that measured where that streaming loses time an
 
 - [💡 What is this?](#-what-is-this)
 - [🚀 Quick start](#-quick-start)
+- [💬 Talk to the model](#-talk-to-the-model)
 - [⚙️ Feature flags](#️-feature-flags)
 - [📊 Results](#-results)
 - [🔬 How it works](#-how-it-works)
@@ -311,6 +313,46 @@ OMP_NUM_THREADS=$(nproc) ./c/qwen36 32 4 prompt.txt
 
 > ℹ️ For everyday use, colibri's own launcher (`./coli chat`, `./coli serve`) works as usual; see
 > [README.colibri.md](README.colibri.md). This fork passes the flags through the environment.
+
+---
+
+## 💬 Talk to the model
+
+Want to chat with Qwen3-Coder yourself, and feel the difference? [`chat.py`](benchmarks/expert_cache_research/chat.py) loads the
+model once and keeps the conversation going. Pick the engine when you start it:
+
+```bash
+cd benchmarks/expert_cache_research
+
+python3 chat.py original     # 🐢 the original colibri engine
+python3 chat.py modified     # ⚡ this project: parallel loading + waves
+```
+
+Wait for **`Ready`** (the model takes 1–3 minutes to load), then type after `you ›` and press **Enter**. The answer streams in
+after `model ›`, and a timing line follows it:
+
+```text
+you › Write a one-line Python function that reverses a string.
+model › def reverse_string(s): return s[::-1]
+
+   ⏱  first token after 24.5 s · 14 tokens in 44.7 s (0.69 tok/s) · prompt 20 tokens
+```
+
+| Command / option | What it does |
+|---|---|
+| `/reset` | start a new conversation |
+| `/quit` or **Ctrl + C** | exit |
+| `--max-tokens N` | longest answer, default 512 |
+| `--cap N` | experts kept in RAM per layer, default 12 (`--cap 32` is faster if you have ~6.5 GB free) |
+| `--temp T` | sampling temperature, default 0 (deterministic) |
+
+> 🔬 **Try the same long message in both.** Paste a page of code and ask *"explain this code"*: the longer the message, the
+> bigger the gap in *first token after*, because the original re-reads the same experts for every token of your message.
+> With the default temperature 0, both engines give the **same answer**; only the waiting changes.
+
+> ℹ️ Why not `coli chat`? colibri's launcher applies the Qwen3.6 template to this model, adding an empty `<think></think>`
+> block, and Qwen3-Coder then answers with nothing. `chat.py` sends plain ChatML instead. The engine's own diagnostics go to
+> `/tmp/colibri_chat_<engine>.log`, so the chat stays clean. Run one chat at a time.
 
 ---
 

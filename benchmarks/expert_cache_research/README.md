@@ -97,3 +97,7 @@ python3 compare.py ab/baseline ab/optimized --out comparison.md --title "COLI_Q3
 | `order/` | `COLI_Q36_PREFILL_WAVES_ORDER=last` vs first-seen; token path's decode misses | `order/commands.txt` |
 
 Rows now also carry `ru_minflt`/`ru_majflt`, the host canary (`host_free_mb`, `host_vm_ws_mb`, WSL only), the `[waves]` counters and timers, and `prefill_misses`/`decode_misses` (from the `[timers] prefill cache:` line of `qwen36.v4`+). `ab2/report_tables.py` turns `compare.py` outputs into the report's tables.
+
+**Chat with the model:** `python3 chat.py original` or `python3 chat.py modified` (from this directory) loads Qwen3-Coder once with
+the original engine or with `COLI_Q36_MISS_QD=8` + `COLI_Q36_PREFILL_WAVES=1`, keeps the conversation, and prints the time to first
+token after every reply. It sends plain ChatML; see the main README's "Talk to the model".
