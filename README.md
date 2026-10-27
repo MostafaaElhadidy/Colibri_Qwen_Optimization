@@ -21,7 +21,7 @@
   <a href="#-talk-to-the-model">💬 Chat</a> ·
   <a href="#-results">📊 Results</a> ·
   <a href="#-how-it-works">🔬 How it works</a> ·
-  <a href="https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html">📖 The story</a> ·
+  <a href="https://mostafaaelhadidy.github.io/Colibri_Qwen_Optimization/colibri_story.html">📖 The story</a> ·
   <a href="docs/colibri_optimization_results.pdf">📄 PDF report</a> ·
   <a href="docs/STATUS.md">🧭 Status</a>
 </p>
@@ -55,7 +55,7 @@ This project is a research fork that measured where that streaming loses time an
 - 🧪 Every claim comes from **cold, interleaved (ABBA), 3-rep** benchmarks with **bootstrap 95% confidence intervals**.
   Results that don't clear the bar are reported as *n.s.*, not as wins.
 
-> 📖 **New here?** Read [**the whole story on one page**](https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html): from the first measurement to the GLM-5.3
+> 📖 **New here?** Read [**the whole story on one page**](https://mostafaaelhadidy.github.io/Colibri_Qwen_Optimization/colibri_story.html): from the first measurement to the GLM-5.3
 > outlook, with interactive charts ([source](docs/colibri_story.html)).
 
 <p align="center">
@@ -438,7 +438,7 @@ Three pieces would carry over:
 
 | Document | What's in it |
 |---|---|
-| 📖 [**The story** (view)](https://raw.githack.com/MostafaaElhadidy/Colibri_Qwen_Optimization/main/docs/colibri_story.html) · [`docs/colibri_story.html`](docs/colibri_story.html) | everything that happened, in order, on one interactive page: the original engine, each change, the proof, and GLM-5.3 |
+| 📖 [**The story** (view)](https://mostafaaelhadidy.github.io/Colibri_Qwen_Optimization/colibri_story.html) · [`docs/colibri_story.html`](docs/colibri_story.html) | everything that happened, in order, on one interactive page: the original engine, each change, the proof, and GLM-5.3 |
 | 📄 [`docs/colibri_optimization_results.pdf`](docs/colibri_optimization_results.pdf) | 5-page summary for a technical reader new to colibri |
 | 🧭 [`docs/STATUS.md`](docs/STATUS.md) | where things stand, every flag, next steps |
 | 📘 [`docs/expert_cache_research.md`](docs/expert_cache_research.md) | part 1: architecture, baseline, parallel loading |
