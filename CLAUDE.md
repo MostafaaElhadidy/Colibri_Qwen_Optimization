@@ -1,5 +1,7 @@
 # Colibri expert-cache research: working notes
 
+**Start here: read `docs/STATUS.md` first** (what is done, every flag and its default, results, open questions, next steps).
+
 Context: `docs/expert_cache_research.md` (report) and `benchmarks/expert_cache_research/README.md` (kit).
 
 ## Model
