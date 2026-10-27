@@ -853,7 +853,9 @@ typedef struct {
  * only weight copy a slot holds when the shared kernel is active; g/u/d and
  * g4/u4/d4 are then NULL. */
 typedef struct { int eid; int pinned; int is_int4; int8_t *g, *u, *d; uint8_t *g4, *u4, *d4; uint8_t *pw; float *gs, *us, *ds; uint64_t used;
-                 unsigned busy; /* callers computing from this slot (expert_hold): never evicted */ } Slot;
+                 unsigned busy; /* callers computing from this slot (expert_hold): never evicted */
+                 unsigned char fp_filled; /* COLI_Q36_FAULT_PROF: the slot's memory has been written once */
+                 unsigned char in_arena;  /* COLI_Q36_SLOT_ARENA: pw/gs live in the layer's arena, never free()d */ } Slot;
 typedef struct {
     Slot *slots;
     int *slot_by_expert;                  /* expert id -> resident slot, -1 if absent */
@@ -2555,12 +2557,69 @@ static int qwen36_cap_for_ram(double resident_gb, double avail_gb, double ram_gb
     return derived;
 }
 
+/* COLI_Q36_SLOT_ARENA=1 (default 0 = off): a layer's planar slots (weights and
+ * scales) are carved from one anonymous mapping per layer, 2 MiB aligned and
+ * madvise(MADV_HUGEPAGE), and the miss read buffers are huge-page mappings too.
+ * Measured on WSL2 (docs/expert_cache_research_2.md): rewriting an evicted 2.53 MiB
+ * slot in 4 KiB pages cost 2.0 ms of int4 repack (worst 195 ms) against 0.25 ms in
+ * 2 MiB pages, with no guest page fault either way -- the cost is TLB and nested-
+ * paging misses -- and the first fill of the 4 GB slot set took ~1M minor faults.
+ * Placement only: the bytes in a slot are the same. Slot i of a layer always sits
+ * at the same offset, so nothing is ever freed or reallocated. */
+static int q36_slot_arena(void) {
+    static int on = -1;
+    if (on < 0) { const char *p = getenv("COLI_Q36_SLOT_ARENA"); on = p && *p == '1'; }
+    return on;
+}
+/* n bytes in 2 MiB pages where the kernel gives them, NULL when it cannot map */
+static void *q36_huge_map(size_t n) {
+#if defined(_WIN32)
+    (void)n; return NULL;
+#else
+    const size_t H = (size_t)2 << 20;
+    size_t len = (n + H - 1) / H * H + H;
+    uint8_t *p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (p == MAP_FAILED) return NULL;
+    uint8_t *a = (uint8_t *)(((uintptr_t)p + H - 1) & ~(uintptr_t)(H - 1));
+#ifdef MADV_HUGEPAGE
+    madvise(a, len - (size_t)(a - p), MADV_HUGEPAGE);
+#endif
+    return a;   /* never unmapped: the arena lives as long as the model */
+#endif
+}
+/* s's place in its layer's arena (bytes long), NULL when s is not a layer cache
+ * slot (the Vulkan warm start's temporaries) or the flag is off. Caller holds
+ * g_pilot_mx, as for every slot allocation. */
+static uint8_t *q36_slot_arena_take(Model *m, Slot *s, size_t bytes) {
+    if (!q36_slot_arena() || !m->cache) return NULL;
+    static uint8_t **arena; static int arena_n;
+    for (int l = 0; l < m->c.n_layers; l++) {
+        LCache *lc = &m->cache[l];
+        if (!lc->slots || s < lc->slots || s >= lc->slots + lc->cap) continue;
+        if (!arena) { arena = calloc((size_t)m->c.n_layers, sizeof(*arena)); arena_n = m->c.n_layers; if (!arena) return NULL; }
+        if (l >= arena_n) return NULL;
+        size_t stride = (bytes + 4095) / 4096 * 4096;
+        if (!arena[l]) arena[l] = q36_huge_map(stride * (size_t)lc->cap);
+        return arena[l] ? arena[l] + stride * (size_t)(s - lc->slots) : NULL;
+    }
+    return NULL;
+}
+
 static void slot_ensure_allocated(Model *m, Slot *s) {
     if (s->g || s->pw) return;
     Cfg *c = &m->c;
     int64_t ng = (int64_t)c->inter * c->hidden;
     int64_t nd = (int64_t)c->hidden * c->inter;
     if (xf_mode(m)) {
+        size_t wb = (size_t)(ng + ng + nd) / 2;
+        uint8_t *a = q36_slot_arena_take(m, s, wb + sizeof(float) * (size_t)(2*scale_count_gu(c) + scale_count_d(c)));
+        if (a) {
+            s->pw = a; s->in_arena = 1;
+            float *s_block = (float *)(a + wb);   /* wb is a multiple of 4 */
+            s->gs = s_block; s->us = s_block + scale_count_gu(c); s->ds = s_block + 2*scale_count_gu(c);
+            s->pinned = 0; s->is_int4 = 1; s->g = s->u = s->d = NULL; s->g4 = s->u4 = s->d4 = NULL;
+            return;
+        }
         /* half the bytes of the int8 block: the int4 stays packed */
         s->pw = malloc((size_t)(ng + ng + nd) / 2);
         if (!s->pw) { fprintf(stderr, "Error: OOM allocating slot weights\n"); exit(1); }
@@ -2659,11 +2718,70 @@ static int q36_miss_qd(void) {
     return qd;
 }
 
+/* COLI_Q36_FAULT_PROF=1 (diagnostic, default off): every step of a miss -- slot
+ * pick, buffer, weight pread, repack, scale pread, publish -- is wrapped in
+ * getrusage(RUSAGE_THREAD) and a clock, so the minor/major faults and the time
+ * of each are reported per miss at exit (q36_fp_report). It only measures:
+ * nothing it does changes a decision or a byte. */
+enum { Q36_FP_VICTIM, Q36_FP_BUF, Q36_FP_WREAD, Q36_FP_REPACK, Q36_FP_SREAD, Q36_FP_REPACK1, Q36_FP_SREAD1, Q36_FP_PUBLISH, Q36_FP_N };
+static const char *const q36_fp_name[Q36_FP_N] = { "slot pick", "read buffer", "weight pread", "int4 repack", "scale pread",
+                                                   "repack, 1st", "scale rd, 1st", "publish" };
+typedef struct { double t; long minflt, majflt; } Q36FpMark;
+static double g_fp_us[Q36_FP_N]; static long g_fp_min[Q36_FP_N], g_fp_maj[Q36_FP_N], g_fp_n[Q36_FP_N];
+static pthread_mutex_t g_fp_mx = PTHREAD_MUTEX_INITIALIZER;
+static int q36_fault_prof(void) {
+    static int on = -1;
+    if (on < 0) { const char *p = getenv("COLI_Q36_FAULT_PROF"); on = p && *p == '1'; }
+    return on;
+}
+static void q36_fp_mark(Q36FpMark *k) {
+    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+    k->t = ts.tv_sec * 1e6 + ts.tv_nsec / 1e3;
+#ifdef RUSAGE_THREAD
+    struct rusage r; getrusage(RUSAGE_THREAD, &r);
+    k->minflt = r.ru_minflt; k->majflt = r.ru_majflt;
+#else
+    k->minflt = k->majflt = 0;
+#endif
+}
+/* adds the time since *k to step (count: calls it completes) and moves *k to now */
+static void q36_fp_step(int step, Q36FpMark *k, int count) {
+    Q36FpMark n; q36_fp_mark(&n);
+    pthread_mutex_lock(&g_fp_mx);
+    g_fp_us[step] += n.t - k->t; g_fp_min[step] += n.minflt - k->minflt; g_fp_maj[step] += n.majflt - k->majflt; g_fp_n[step] += count;
+    pthread_mutex_unlock(&g_fp_mx);
+    *k = n;
+}
+/* process-wide faults at a phase boundary: load, prefill, decode */
+static void q36_fp_phase(const char *what) {
+    if (!q36_fault_prof()) return;
+    static long last_min, last_maj; static double last_t;
+    struct rusage r; getrusage(RUSAGE_SELF, &r);
+    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+    double t = ts.tv_sec + ts.tv_nsec / 1e9;
+    fprintf(stderr, "[faultprof] phase %-8s minflt %9ld majflt %7ld  (%.1f s)\n", what,
+            r.ru_minflt - last_min, r.ru_majflt - last_maj, last_t > 0 ? t - last_t : 0.0);
+    last_min = r.ru_minflt; last_maj = r.ru_majflt; last_t = t;
+}
+static void q36_fp_report(void) {
+    if (!q36_fault_prof()) return;
+    fprintf(stderr, "[faultprof] per call: step          calls     us/call  minflt/call  majflt/call\n");
+    for (int i = 0; i < Q36_FP_N; i++) {
+        long n = g_fp_n[i] ? g_fp_n[i] : 1;
+        fprintf(stderr, "[faultprof]   %-14s %8ld %10.1f %12.1f %12.2f\n", q36_fp_name[i], g_fp_n[i],
+                g_fp_us[i] / n, (double)g_fp_min[i] / n, (double)g_fp_maj[i] / n);
+    }
+}
+
 /* The calling thread's read buffer for a miss, grown on demand and kept for the
  * life of the thread: N loader threads hold N x 2.36 MB on Qwen3-Coder-30B. */
 static uint8_t *q36_miss_buf(size_t n) {
     static _Thread_local uint8_t *buf;
     static _Thread_local size_t cap;
+    if (n > cap && q36_slot_arena()) {   /* COLI_Q36_SLOT_ARENA: the buffer in 2 MiB pages too */
+        uint8_t *h = q36_huge_map(n);     /* grows once per thread; the old one is left mapped */
+        if (h) { buf = h; cap = n; return buf; }
+    }
     if (n > cap) {
         free(buf);
         buf = malloc(n);
@@ -2721,10 +2839,13 @@ static void load_expert_merged(Model *m, int layer, int eid, Slot *s) {
         if (!noted) { fprintf(stderr, "[qwen36] int4 packed weights detected — %s\n", s->pw ? "kept int4, repacked planar for expert_ffn.h" : "unpacking to int8 in slot"); noted = 1; }
         /* COLI_Q36_MISS_QD: the planar path never keeps raw, so it reads into the
          * thread's reused buffer (no malloc, no fresh pages to fault in per miss) */
+        int fp = q36_fault_prof(); Q36FpMark fk; if (fp) q36_fp_mark(&fk);
         int reuse = q36_miss_qd() && s->pw;
         uint8_t *raw = reuse ? q36_miss_buf((size_t)(want_w / 2)) : (uint8_t *)malloc((size_t)(want_w / 2));
         if (!raw) { fprintf(stderr, "OOM reading int4 expert %s\n", nm); exit(1); }
+        if (fp) q36_fp_step(Q36_FP_BUF, &fk, 1);
         st_read_raw(&m->S, nm, raw, 1);
+        if (fp) q36_fp_step(Q36_FP_WREAD, &fk, 1);
         if (s->pw) {
             /* shared kernel: pairs -> planar, never int8 */
             int64_t gp = ng / 2;
@@ -2732,13 +2853,18 @@ static void load_expert_merged(Model *m, int layer, int eid, Slot *s) {
             xf_repack_pairs_signed(s->pw + gp,     raw + gp,     cc->inter,  cc->hidden);
             xf_repack_pairs_signed(s->pw + 2 * gp, raw + 2 * gp, cc->hidden, cc->inter);
             s->is_int4 = 1;
+            /* a slot's first fill faults its own pages in: counted apart */
+            int first = !s->fp_filled; s->fp_filled = 1;
+            if (fp) q36_fp_step(first ? Q36_FP_REPACK1 : Q36_FP_REPACK, &fk, 1);
             if (!reuse) free(raw);
+            if (fp) q36_fp_step(Q36_FP_BUF, &fk, 0);
             /* F32 scales are their own bytes: read them straight into the slot
              * (st_read_f32 would malloc a 288 KB bounce buffer and memcpy it) */
             if (reuse && ts->dtype == 2 && ts->nbytes == want_s * (int64_t)sizeof(float))
                 st_read_raw(&m->S, qsnm, s->gs, 0);
             else
                 st_read_f32(&m->S, qsnm, s->gs, 0);
+            if (fp) q36_fp_step(first ? Q36_FP_SREAD1 : Q36_FP_SREAD, &fk, 1);
             return;
         }
         unpack_int4_to_int8(s->g, raw, want_w);
@@ -2883,6 +3009,7 @@ static void expert_fetch(Model *m, int layer, int eid, Slot **out, int hold) {
         pthread_mutex_unlock(&g_pilot_mx); return;
     }
     m->miss++;
+    int fp = q36_fault_prof(); Q36FpMark fk; if (fp) q36_fp_mark(&fk);
     Cfg *c = &m->c; Slot *s;
     if (lc->n < lc->cap) { s = &lc->slots[lc->n++]; slot_ensure_allocated(m, s); }
     else {
@@ -2920,14 +3047,17 @@ static void expert_fetch(Model *m, int layer, int eid, Slot **out, int hold) {
     }
     cache_hide(m, layer, s); s->used = ++m->clock;
     pthread_mutex_unlock(&g_pilot_mx);
+    if (fp) q36_fp_step(Q36_FP_VICTIM, &fk, 1);
     double t_read0 = now_s();
     load_expert_merged(m, layer, eid, s);
     double t_read = now_s() - t_read0;
+    if (fp) q36_fp_mark(&fk);
     pthread_mutex_lock(&g_pilot_mx);
     m->t_disk += t_read;        /* sotto lock: qui arrivano anche i thread del PILOT */
     cache_publish(m, layer, s, eid); s->pinned = m->is_pinned[layer * c->n_experts + eid]; s->used = ++m->clock;
     if (hold) slot_hold(s);
     *out = s; pthread_mutex_unlock(&g_pilot_mx);
+    if (fp) q36_fp_step(Q36_FP_PUBLISH, &fk, 1);
 }
 static void expert_get(Model *m, int layer, int eid, Slot **out) { expert_fetch(m, layer, eid, out, 0); }
 /* expert_get for a caller that computes from the slot after the lock drops:
@@ -2953,6 +3083,7 @@ static void expert_hold_batch(Model *m, int layer, const int *ids, int n, Slot *
     if (!load_i || !load_s || !load_t) { fprintf(stderr, "OOM expert_hold_batch\n"); exit(1); }
     for (int i = 0; i < n; i++) { held[i] = NULL; if (ids[i] >= 0) ehit_mark(m, layer, ids[i]); }
     int nl = 0, i = 0;
+    int fp = q36_fault_prof(); Q36FpMark fk; if (fp) q36_fp_mark(&fk);
     pthread_mutex_lock(&g_pilot_mx);
     for (; i < n; i++) {
         int eid = ids[i];
@@ -2975,12 +3106,14 @@ static void expert_hold_batch(Model *m, int layer, const int *ids, int n, Slot *
         held[i] = s; load_i[nl] = i; load_s[nl] = s; nl++;
     }
     pthread_mutex_unlock(&g_pilot_mx);
+    if (fp) q36_fp_step(Q36_FP_VICTIM, &fk, nl);
     #pragma omp parallel for num_threads(qd) schedule(dynamic, 1) if(nl > 1)
     for (int j = 0; j < nl; j++) {
         double t0 = now_s();
         load_expert_merged(m, layer, ids[load_i[j]], load_s[j]);
         load_t[j] = now_s() - t0;
     }
+    if (fp) q36_fp_mark(&fk);
     pthread_mutex_lock(&g_pilot_mx);
     for (int j = 0; j < nl; j++) {
         int eid = ids[load_i[j]];
@@ -2989,6 +3122,7 @@ static void expert_hold_batch(Model *m, int layer, const int *ids, int n, Slot *
         load_s[j]->pinned = m->is_pinned[layer * c->n_experts + eid];
     }
     pthread_mutex_unlock(&g_pilot_mx);
+    if (fp) q36_fp_step(Q36_FP_PUBLISH, &fk, nl);
     for (; i < n; i++) if (ids[i] >= 0) held[i] = expert_hold(m, layer, ids[i]);
     free(load_i); free(load_s); free(load_t);
 }
@@ -5087,7 +5221,9 @@ static void generate(Model *m, const int *prompt, int np, int n_new, int *out) {
     ensure_kv(m);
     m->kv_len = 0;
     for (int i = 0; i < np; i++) out[i] = prompt[i];
+    q36_fp_phase("load");
     float *logit = step(m, prompt, np, 0);
+    q36_fp_phase("prefill");
     qt_stats_mark();   /* [qtier] stats also report the hit rate from here on */
     int len = np;
     Q36Spec *sp = &g_q36_run_spec;
@@ -6797,6 +6933,8 @@ int main(int argc, char **argv) {
     q36_spec_report(&g_q36_run_spec, "run");
     q36_spec_free(&g_q36_run_spec);
     tm_report();
+    q36_fp_phase("decode");
+    q36_fp_report();
     qt_stats();
     /* qpack dispatch evidence, mirroring what the parity gates assert: which
      * path computed the routed projections (coli_metal_matmul_affine_slot
@@ -6868,8 +7006,7 @@ static void qwen36_segment_model_destroy(Qwen36SegmentEngine *engine) {
         LCache *cache = &model->cache[layer];
         for (int slot = 0; slot < cache->n; slot++) {
             free(cache->slots[slot].g);
-            free(cache->slots[slot].pw);
-            free(cache->slots[slot].gs);
+            if (!cache->slots[slot].in_arena) { free(cache->slots[slot].pw); free(cache->slots[slot].gs); }
             free(cache->slots[slot].g4);
             free(cache->slots[slot].u4);
             free(cache->slots[slot].d4);
