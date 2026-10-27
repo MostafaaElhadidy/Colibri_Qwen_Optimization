@@ -1,0 +1,18 @@
+# io_profile 2026-10-26T16:30:43+03:00  model=/home/mostafa/colibri-models/qwen3-coder-30b  device=/dev/sdd
+# expert size: 2654208 bytes (2.53125 MiB); file: /home/mostafa/colibri-models/qwen3-coder-30b/model-00020.safetensors; 120 random reads per row (buffered rows may re-hit overlapping blocks; the O_DIRECT rows are the device number)
+## direct=0 threads(QD)=1
+buffered x1 threads: 120 reads x 2.531 MB = 0.3 GB in 1.70s -> 0.19 GB/s (14.1 effective ms/block)
+## direct=0 threads(QD)=4
+buffered x4 threads: 120 reads x 2.531 MB = 0.3 GB in 0.09s -> 3.47 GB/s (0.8 effective ms/block)
+## direct=0 threads(QD)=8
+buffered x8 threads: 120 reads x 2.531 MB = 0.3 GB in 0.08s -> 4.14 GB/s (0.6 effective ms/block)
+## direct=0 threads(QD)=16
+buffered x16 threads: 120 reads x 2.531 MB = 0.3 GB in 0.08s -> 3.82 GB/s (0.7 effective ms/block)
+## direct=1 threads(QD)=1
+O_DIRECT x1 threads: 120 reads x 2.531 MB = 0.3 GB in 0.16s -> 1.93 GB/s (1.4 effective ms/block)
+## direct=1 threads(QD)=4
+O_DIRECT x4 threads: 120 reads x 2.531 MB = 0.3 GB in 0.06s -> 5.53 GB/s (0.5 effective ms/block)
+## direct=1 threads(QD)=8
+O_DIRECT x8 threads: 120 reads x 2.531 MB = 0.3 GB in 0.08s -> 3.84 GB/s (0.7 effective ms/block)
+## direct=1 threads(QD)=16
+O_DIRECT x16 threads: 120 reads x 2.531 MB = 0.3 GB in 0.07s -> 4.30 GB/s (0.6 effective ms/block)

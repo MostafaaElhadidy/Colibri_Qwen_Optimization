@@ -1,0 +1,172 @@
+You are reviewing a module from a C/Python inference project. Summarise what the code below does, identify three concrete risks (correctness, portability or performance), and propose a refactor plan with small, testable steps.
+
+```python
+#!/usr/bin/env python3
+"""Hardware and model placement planning for colibri's disk/RAM/VRAM tiers."""
+
+import collections
+import json
+import os
+import platform
+import re
+import shutil
+import statistics
+import subprocess
+import sys
+import threading
+from dataclasses import dataclass
+from pathlib import Path
+
+from family_registry import (expert_contributions, planner_geometry,
+                             fixed_resident_contribution, resident_contribution,
+                             trunk_contribution,
+                             resolve_model)
+
+
+GB = 1_000_000_000
+EXPERT_RE = re.compile(r"(?:model\.)?layers\.(\d+)\.(?:mlp|ffn)\.experts\.(\d+)\.")
+
+# Cgroup and procfs inputs are tiny kernel-maintained text files. Bound every
+# read anyway: the planner may run in a container with a synthetic or partially
+# mounted cgroup tree, and admission must never turn an unexpected file into an
+# unbounded read or an unbounded hierarchy walk.
+_CGROUP_VALUE_MAX_BYTES = 128
+_CGROUP_STAT_MAX_BYTES = 64 * 1024
+_CGROUP_MEMBERSHIP_MAX_BYTES = 64 * 1024
+_CGROUP_MOUNTINFO_MAX_BYTES = 4 * 1024 * 1024
+_CGROUP_MAX_ANCESTORS = 64
+_MEMINFO_MAX_BYTES = 256 * 1024
+_CGROUP_UINT64_MAX = (1 << 64) - 1
+_CGROUP_UINT64_DIGITS = len(str(_CGROUP_UINT64_MAX))
+# cgroup v1 represents "unlimited" with a page-aligned value just below the
+# signed 64-bit maximum (commonly 9223372036854771712). No consumer host can
+# provide an exbibyte of usable RAM, so this conservative threshold also covers
+# the other kernel sentinel variants without confusing a real finite limit.
+_CGROUP_V1_UNLIMITED_MIN = 1 << 60
+
+
+class CgroupError(ValueError):
+    """A present cgroup or procfs input cannot be trusted for memory admission."""
+
+
+class CgroupFormatError(CgroupError):
+    """A present procfs or cgroup file does not have the kernel's grammar."""
+
+
+class CgroupAccessError(CgroupError):
+    """A present cgroup input cannot be read completely or mapped soundly."""
+
+
+@dataclass(frozen=True)
+class _CgroupMemberships:
+    v2: tuple | None
+    v1_memory: tuple | None
+
+
+@dataclass(frozen=True)
+class _CgroupMount:
+    mount_id: int
+    parent_id: int
+    root: tuple
+    mount_point: Path
+    fs_type: str
+    options: frozenset
+
+
+# analyze_model() scans every shard header + regex-matches ~116k tensor names on the
+# 372 GB model; it reruns on every `coli plan/doctor/tune/run --auto-tier`. Its output
+# is a pure function of each shard's and config.json's (size, mtime), so cache it to a
+# sidecar and self-invalidate on any change. Best-effort: any read/write failure falls
+# straight back to a full recompute (see analyze_model). Sits alongside .coli_usage/.coli_ssd.
+_ANALYSIS_CACHE_NAME = ".coli_analysis.json"
+_ANALYSIS_CACHE_VERSION = 11
+
+
+def _dense_in_ram(descriptor, on_disk_bytes):
+    """I byte che i pesi densi occuperanno, non quelli che occupano sul disco.
+
+    Coincidono per chi li carica come stanno; una famiglia che li riquantizza
+    al caricamento lo dichiara nel registro. Un errore qui non e' cosmetico:
+    e' la differenza fra dire a qualcuno che il modello ci sta e dirgli di no."""
+    # GLM53's quantization is per matrix, with F32 vectors/vision and an int8
+    # fallback for narrow rows. A whole-checkpoint ratio cannot represent it;
+    # _glm53_dense_tensors prices its source inventory below, outside the cache.
+    if descriptor.id == "glm53":
+        return on_disk_bytes
+    ratio = getattr(descriptor, "dense_load_ratio", None)
+    if ratio is None:
+        return on_disk_bytes
+    try:
+        return max(0, int(ratio(on_disk_bytes)))
+    except Exception:
+        return on_disk_bytes
+
+
+# A token embedding table: "embed_tokens", DeepSeek's "embed", "tok_embeddings",
+# "wte"; not a vision tower's patch or position embedding.
+_EMBED_TABLE = re.compile(r"(^|\.)(embed_tokens|embed|tok_embeddings|wte|word_embeddings)\.weight$")
+
+
+def _vk_flag(env, name):
+    value = (env.get(name) or "").strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return 1
+
+
+# The families whose dense chain is on by default on an integrated GPU with the
+# expert tier (coli_vk_chain_decide's measured `igpu`, docs/vulkan.md).
+_VK_IGPU_CHAIN_ON = ("qwen36", "olmoe")
+_VK_DENSE_HOST_FAMILIES = frozenset((
+    "qwen36", "qwen38", "glm", "glm53", "inkling", "kimi", "mimo",
+    "olmoe", "deepseek_v4", "deepseek_v41",
+))
+
+
+def _vk_device(env, vulkan):
+    if vulkan is not None or not _vk_flag(env, "COLI_VULKAN"):
+        return vulkan
+    try:
+        from setup_hw import best_vulkan_device, detect_vulkan
+        return best_vulkan_device(detect_vulkan().get("devices", []))
+    except Exception:
+        return None
+
+
+def _vk_chain_dense(family_id, env, vulkan):
+    """(chain, dense): whether the engine runs its dense chain, and its per-matrix
+    path, on the Vulkan device (coli_vk_chain_decide, coli_vk_dense_decide); both
+    False when it does not open one."""
+    if (family_id not in _VK_DENSE_HOST_FAMILIES or
+            not _vk_flag(env, "COLI_VULKAN") or _vk_flag(env, "COLI_CUDA")):
+        return False, False
+    kind = (vulkan or {}).get("type")
+    if kind not in ("discrete", "integrated", "cpu", "virtual", "other"):
+        return False, False
+    tier = _vk_flag(env, "COLI_VK_TIER") != 0
+    chain, dense = _vk_flag(env, "COLI_VK_CHAIN"), _vk_flag(env, "COLI_VK_DENSE")
+    if chain is None:
+        chain = (kind not in ("integrated", "cpu") or
+                 kind == "integrated" and tier and family_id in _VK_IGPU_CHAIN_ON)
+    if dense is None:
+        # colibri.c passes default=0 to coli_vk_dense_decide; its chain is
+        # independent, but disabling that chain does not enable per-matrix GEMVs.
+        dense = family_id != "glm" and (kind not in ("integrated", "cpu") or not tier)
+    return bool(chain), bool(dense)
+
+
+def _vk_dense_active(family_id, env, vulkan):
+    return any(_vk_chain_dense(family_id, env, vulkan))
+
+
+def _text_weight_name(name):
+    return name.removeprefix("language_model.").replace("model.language_model.", "model.", 1)
+
+
+_Q38_TRUNK_COMPONENTS = {
+    "self_attn.q_proj": "attnq", "self_attn.k_proj": "attnk",
+    "self_attn.v_proj": "attnv", "self_attn.o_proj": "attno",
+```

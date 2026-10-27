@@ -1,0 +1,2068 @@
+{
+ "invocations": [
+  {
+   "argv": [
+    "run_bench.py",
+    "--snap",
+    "/home/mostafa/colibri-models/qwen3-coder-30b",
+    "--arm",
+    "baseline=bin/qwen36.baseline",
+    "--arm",
+    "optimized=bin/qwen36.optimized:COLI_Q36_MISS_QD=8",
+    "--modes",
+    "cold",
+    "--caps",
+    "32,12",
+    "--pilot",
+    "0",
+    "--prompts",
+    "short,medium",
+    "--reps",
+    "3",
+    "--n-new",
+    "32",
+    "--out",
+    "ab"
+   ],
+   "arm": {
+    "name": "optimized",
+    "binary": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized",
+    "env": {
+     "COLI_Q36_MISS_QD": "8"
+    },
+    "sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5"
+   },
+   "snap": "/home/mostafa/colibri-models/qwen3-coder-30b",
+   "device": "sdd",
+   "expert_bytes": 2654208,
+   "common_env": {
+    "COLI_TIMERS": "1",
+    "COLI_LOOKUP": "0",
+    "COLI_KV_PREFIX": "0",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "cores"
+   },
+   "started": "2026-10-27T01:56:39"
+  }
+ ],
+ "cells": {
+  "cold|cold-process|medium|cap12|pilot0": {
+   "runs": 3,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 3,
+     "mean": 74.64333333333333,
+     "stdev": 1.56477900463079,
+     "min": 72.87,
+     "max": 75.83,
+     "values": [
+      75.83,
+      72.87,
+      75.23
+     ]
+    },
+    "engine_tok_s": {
+     "n": 3,
+     "mean": 0.3233333333333333,
+     "stdev": 0.011547005383792526,
+     "min": 0.31,
+     "max": 0.33,
+     "values": [
+      0.33,
+      0.33,
+      0.31
+     ]
+    },
+    "decode_tok_s": {
+     "n": 3,
+     "mean": 1.2985322880270551,
+     "stdev": 0.16630810290090745,
+     "min": 1.166729394053444,
+     "max": 1.4853857211308095,
+     "values": [
+      1.4853857211308095,
+      1.2434817488969117,
+      1.166729394053444
+     ]
+    },
+    "wall_s": {
+     "n": 3,
+     "mean": 149.7537502136644,
+     "stdev": 19.254882155373632,
+     "min": 129.50920417199814,
+     "max": 167.83650396699522,
+     "values": [
+      167.83650396699522,
+      129.50920417199814,
+      151.91554250199988
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 3,
+     "mean": 45.1,
+     "stdev": 0.0,
+     "min": 45.1,
+     "max": 45.1,
+     "values": [
+      45.1,
+      45.1,
+      45.1
+     ]
+    },
+    "hits": {
+     "n": 3,
+     "mean": 33288.0,
+     "stdev": 0.0,
+     "min": 33288,
+     "max": 33288,
+     "values": [
+      33288,
+      33288,
+      33288
+     ]
+    },
+    "misses": {
+     "n": 3,
+     "mean": 40440.0,
+     "stdev": 0.0,
+     "min": 40440,
+     "max": 40440,
+     "values": [
+      40440,
+      40440,
+      40440
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 3,
+     "mean": 640.1,
+     "stdev": 88.45763110099662,
+     "min": 542.55,
+     "max": 715.1,
+     "values": [
+      542.55,
+      662.65,
+      715.1
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 3,
+     "mean": 78.33666666666666,
+     "stdev": 1.9637803678958914,
+     "min": 76.88,
+     "max": 80.57,
+     "values": [
+      77.56,
+      80.57,
+      76.88
+     ]
+    },
+    "step_ms_tok": {
+     "n": 3,
+     "mean": 777.0333333333333,
+     "stdev": 95.76937575933826,
+     "min": 670.7,
+     "max": 856.5,
+     "values": [
+      670.7,
+      803.9,
+      856.5
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 3,
+     "mean": 720.7633333333333,
+     "stdev": 88.691558410783,
+     "min": 622.27,
+     "max": 794.31,
+     "values": [
+      622.27,
+      745.71,
+      794.31
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 3,
+     "mean": 47.54333333333333,
+     "stdev": 7.508024595946215,
+     "min": 39.15,
+     "max": 53.62,
+     "values": [
+      39.15,
+      49.86,
+      53.62
+     ]
+    },
+    "router_ms_tok": {
+     "n": 3,
+     "mean": 1.57,
+     "stdev": 0.16093476939431084,
+     "min": 1.4,
+     "max": 1.72,
+     "values": [
+      1.4,
+      1.72,
+      1.59
+     ]
+    },
+    "fetch_share": {
+     "n": 3,
+     "mean": 0.8227115165139504,
+     "stdev": 0.01306137760467756,
+     "min": 0.8089309676457431,
+     "max": 0.8349095154699359,
+     "values": [
+      0.8089309676457431,
+      0.8242940664261724,
+      0.8349095154699359
+     ]
+    },
+    "expert_read_gb": {
+     "n": 3,
+     "mean": 101.56646946133333,
+     "stdev": 0.029550891224023934,
+     "min": 101.536100352,
+     "max": 101.595127808,
+     "values": [
+      101.536100352,
+      101.568180224,
+      101.595127808
+     ]
+    },
+    "disk_read_gb": {
+     "n": 3,
+     "mean": 101.61165107199999,
+     "stdev": 0.035185939585776295,
+     "min": 101.580152832,
+     "max": 101.649625088,
+     "values": [
+      101.605175296,
+      101.580152832,
+      101.649625088
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 3,
+     "mean": 3.85,
+     "stdev": 0.0,
+     "min": 3.85,
+     "max": 3.85,
+     "values": [
+      3.85,
+      3.85,
+      3.85
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 3,
+     "mean": 3.8518880208333335,
+     "stdev": 0.0005799385444996945,
+     "min": 3.8513145446777344,
+     "max": 3.8524742126464844,
+     "values": [
+      3.8524742126464844,
+      3.8518753051757812,
+      3.8513145446777344
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 3,
+     "mean": 323.0,
+     "stdev": 0.0,
+     "min": 323,
+     "max": 323,
+     "values": [
+      323,
+      323,
+      323
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 3,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 3,
+     "mean": 161.0,
+     "stdev": 0.0,
+     "min": 161,
+     "max": 161,
+     "values": [
+      161,
+      161,
+      161
+     ]
+    },
+    "gen_tokens": {
+     "n": 3,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 3,
+     "mean": 72144.33333333333,
+     "stdev": 1467.837297977311,
+     "min": 70458,
+     "max": 73135,
+     "values": [
+      73135,
+      70458,
+      72840
+     ]
+    }
+   },
+   "output_hashes": [
+    "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067"
+   ]
+  },
+  "cold|cold-process|medium|cap32|pilot0": {
+   "runs": 3,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 3,
+     "mean": 79.91333333333334,
+     "stdev": 10.805907335033613,
+     "min": 71.4,
+     "max": 92.07,
+     "values": [
+      92.07,
+      76.27,
+      71.4
+     ]
+    },
+    "engine_tok_s": {
+     "n": 3,
+     "mean": 0.3133333333333333,
+     "stdev": 0.005773502691896263,
+     "min": 0.31,
+     "max": 0.32,
+     "values": [
+      0.31,
+      0.31,
+      0.32
+     ]
+    },
+    "decode_tok_s": {
+     "n": 3,
+     "mean": 1.609240166636898,
+     "stdev": 0.8385474077158823,
+     "min": 1.0954063604240283,
+     "max": 2.5768911055694095,
+     "values": [
+      2.5768911055694095,
+      1.1554230339172569,
+      1.0954063604240283
+     ]
+    },
+    "wall_s": {
+     "n": 3,
+     "mean": 171.65020052933446,
+     "stdev": 14.736115881452115,
+     "min": 160.85855584999808,
+     "max": 188.43937246900168,
+     "values": [
+      165.65267326900357,
+      188.43937246900168,
+      160.85855584999808
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 3,
+     "mean": 74.4,
+     "stdev": 0.0,
+     "min": 74.4,
+     "max": 74.4,
+     "values": [
+      74.4,
+      74.4,
+      74.4
+     ]
+    },
+    "hits": {
+     "n": 3,
+     "mean": 54885.0,
+     "stdev": 0.0,
+     "min": 54885,
+     "max": 54885,
+     "values": [
+      54885,
+      54885,
+      54885
+     ]
+    },
+    "misses": {
+     "n": 3,
+     "mean": 18843.0,
+     "stdev": 0.0,
+     "min": 18843,
+     "max": 18843,
+     "values": [
+      18843,
+      18843,
+      18843
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 3,
+     "mean": 553.5266666666666,
+     "stdev": 234.76277650712285,
+     "min": 286.24,
+     "max": 726.31,
+     "values": [
+      286.24,
+      648.03,
+      726.31
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 3,
+     "mean": 81.81666666666666,
+     "stdev": 27.846589258530987,
+     "min": 51.31,
+     "max": 105.87,
+     "values": [
+      51.31,
+      88.27,
+      105.87
+     ]
+    },
+    "step_ms_tok": {
+     "n": 3,
+     "mean": 719.6333333333333,
+     "stdev": 289.43300318611443,
+     "min": 386.6,
+     "max": 910.4,
+     "values": [
+      386.6,
+      861.9,
+      910.4
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 3,
+     "mean": 637.64,
+     "stdev": 262.64403305614996,
+     "min": 339.45,
+     "max": 834.63,
+     "values": [
+      339.45,
+      738.84,
+      834.63
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 3,
+     "mean": 72.76333333333334,
+     "stdev": 38.03873070087031,
+     "min": 38.27,
+     "max": 113.56,
+     "values": [
+      38.27,
+      113.56,
+      66.46
+     ]
+    },
+    "router_ms_tok": {
+     "n": 3,
+     "mean": 1.5533333333333335,
+     "stdev": 0.30746273486933884,
+     "min": 1.2,
+     "max": 1.76,
+     "values": [
+      1.2,
+      1.76,
+      1.7
+     ]
+    },
+    "fetch_share": {
+     "n": 3,
+     "mean": 0.7633526206980349,
+     "stdev": 0.03037083377358646,
+     "min": 0.7404035178479048,
+     "max": 0.7977921792618629,
+     "values": [
+      0.7404035178479048,
+      0.7518621649843369,
+      0.7977921792618629
+     ]
+    },
+    "expert_read_gb": {
+     "n": 3,
+     "mean": 50.456702976,
+     "stdev": 0.015541644148077063,
+     "min": 50.447130624,
+     "max": 50.474635264,
+     "values": [
+      50.447130624,
+      50.474635264,
+      50.44834304
+     ]
+    },
+    "disk_read_gb": {
+     "n": 3,
+     "mean": 50.48210363733333,
+     "stdev": 0.01997739940305729,
+     "min": 50.461343744,
+     "max": 50.501193728,
+     "values": [
+      50.461343744,
+      50.48377344,
+      50.501193728
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 3,
+     "mean": 6.22,
+     "stdev": 0.0,
+     "min": 6.22,
+     "max": 6.22,
+     "values": [
+      6.22,
+      6.22,
+      6.22
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 3,
+     "mean": 6.224327087402344,
+     "stdev": 0.00010384107657483062,
+     "min": 6.224231719970703,
+     "max": 6.224437713623047,
+     "values": [
+      6.224231719970703,
+      6.224437713623047,
+      6.224311828613281
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 3,
+     "mean": 323.0,
+     "stdev": 0.0,
+     "min": 323,
+     "max": 323,
+     "values": [
+      323,
+      323,
+      323
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 3,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 3,
+     "mean": 161.0,
+     "stdev": 0.0,
+     "min": 161,
+     "max": 161,
+     "values": [
+      161,
+      161,
+      161
+     ]
+    },
+    "gen_tokens": {
+     "n": 3,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 3,
+     "mean": 75683.0,
+     "stdev": 10483.701111725763,
+     "min": 67671,
+     "max": 87548,
+     "values": [
+      87548,
+      71830,
+      67671
+     ]
+    }
+   },
+   "output_hashes": [
+    "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067"
+   ]
+  },
+  "cold|cold-process|short|cap12|pilot0": {
+   "runs": 3,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 3,
+     "mean": 17.04,
+     "stdev": 2.1536945001554884,
+     "min": 14.76,
+     "max": 19.04,
+     "values": [
+      14.76,
+      19.04,
+      17.32
+     ]
+    },
+    "engine_tok_s": {
+     "n": 3,
+     "mean": 0.8466666666666667,
+     "stdev": 0.14047538337136986,
+     "min": 0.7,
+     "max": 0.98,
+     "values": [
+      0.7,
+      0.86,
+      0.98
+     ]
+    },
+    "decode_tok_s": {
+     "n": 3,
+     "mean": 1.5673166596970871,
+     "stdev": 0.5194259335240982,
+     "min": 0.9923175416133162,
+     "max": 2.0025839793281657,
+     "values": [
+      0.9923175416133162,
+      1.7070484581497793,
+      2.0025839793281657
+     ]
+    },
+    "wall_s": {
+     "n": 3,
+     "mean": 82.0279772403325,
+     "stdev": 8.48783500347456,
+     "min": 73.23192303199903,
+     "max": 90.16972118999547,
+     "values": [
+      82.682287499003,
+      90.16972118999547,
+      73.23192303199903
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 3,
+     "mean": 44.79999999999999,
+     "stdev": 0.0,
+     "min": 44.8,
+     "max": 44.8,
+     "values": [
+      44.8,
+      44.8,
+      44.8
+     ]
+    },
+    "hits": {
+     "n": 3,
+     "mean": 9462.0,
+     "stdev": 0.0,
+     "min": 9462,
+     "max": 9462,
+     "values": [
+      9462,
+      9462,
+      9462
+     ]
+    },
+    "misses": {
+     "n": 3,
+     "mean": 11658.0,
+     "stdev": 0.0,
+     "min": 11658,
+     "max": 11658,
+     "values": [
+      11658,
+      11658,
+      11658
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 3,
+     "mean": 589.31,
+     "stdev": 263.97732421554696,
+     "min": 397.03,
+     "max": 890.28,
+     "values": [
+      890.28,
+      480.62,
+      397.03
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 3,
+     "mean": 60.30666666666667,
+     "stdev": 5.90079938087488,
+     "min": 55.25,
+     "max": 66.79,
+     "values": [
+      66.79,
+      58.88,
+      55.25
+     ]
+    },
+    "step_ms_tok": {
+     "n": 3,
+     "mean": 696.2666666666668,
+     "stdev": 272.1129606125613,
+     "min": 498.0,
+     "max": 1006.5,
+     "values": [
+      1006.5,
+      584.3,
+      498.0
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 3,
+     "mean": 651.8466666666667,
+     "stdev": 269.93137726713684,
+     "min": 454.43,
+     "max": 959.44,
+     "values": [
+      959.44,
+      541.67,
+      454.43
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 3,
+     "mean": 36.36333333333334,
+     "stdev": 2.328740718356883,
+     "min": 34.46,
+     "max": 38.96,
+     "values": [
+      38.96,
+      34.46,
+      35.67
+     ]
+    },
+    "router_ms_tok": {
+     "n": 3,
+     "mean": 1.4533333333333331,
+     "stdev": 0.11846237095944584,
+     "min": 1.38,
+     "max": 1.59,
+     "values": [
+      1.59,
+      1.38,
+      1.39
+     ]
+    },
+    "fetch_share": {
+     "n": 3,
+     "mean": 0.83477881769962,
+     "stdev": 0.044905999926091435,
+     "min": 0.7972489959839357,
+     "max": 0.8845305514157973,
+     "values": [
+      0.8845305514157973,
+      0.8225569056991272,
+      0.7972489959839357
+     ]
+    },
+    "expert_read_gb": {
+     "n": 3,
+     "mean": 32.82413841066667,
+     "stdev": 0.04760691558543071,
+     "min": 32.78856192,
+     "max": 32.878219264,
+     "values": [
+      32.805634048,
+      32.78856192,
+      32.878219264
+     ]
+    },
+    "disk_read_gb": {
+     "n": 3,
+     "mean": 32.874315776,
+     "stdev": 0.01776126296776107,
+     "min": 32.86327296,
+     "max": 32.894803968,
+     "values": [
+      32.8648704,
+      32.86327296,
+      32.894803968
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 3,
+     "mean": 3.82,
+     "stdev": 0.0,
+     "min": 3.82,
+     "max": 3.82,
+     "values": [
+      3.82,
+      3.82,
+      3.82
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 3,
+     "mean": 3.8232014973958335,
+     "stdev": 0.0001544991637936306,
+     "min": 3.823070526123047,
+     "max": 3.8233718872070312,
+     "values": [
+      3.823070526123047,
+      3.823162078857422,
+      3.8233718872070312
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 3,
+     "mean": 323.0,
+     "stdev": 0.0,
+     "min": 323,
+     "max": 323,
+     "values": [
+      323,
+      323,
+      323
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 3,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 3,
+     "mean": 24.0,
+     "stdev": 0.0,
+     "min": 24,
+     "max": 24,
+     "values": [
+      24,
+      24,
+      24
+     ]
+    },
+    "gen_tokens": {
+     "n": 3,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 3,
+     "mean": 16458.0,
+     "stdev": 2118.561540290959,
+     "min": 14219,
+     "max": 18431,
+     "values": [
+      14219,
+      18431,
+      16724
+     ]
+    }
+   },
+   "output_hashes": [
+    "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2"
+   ]
+  },
+  "cold|cold-process|short|cap32|pilot0": {
+   "runs": 3,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 3,
+     "mean": 29.253333333333334,
+     "stdev": 3.156649067180788,
+     "min": 25.61,
+     "max": 31.17,
+     "values": [
+      31.17,
+      30.98,
+      25.61
+     ]
+    },
+    "engine_tok_s": {
+     "n": 3,
+     "mean": 0.52,
+     "stdev": 0.0793725393319377,
+     "min": 0.46,
+     "max": 0.61,
+     "values": [
+      0.61,
+      0.46,
+      0.49
+     ]
+    },
+    "decode_tok_s": {
+     "n": 3,
+     "mean": 1.0106818217092963,
+     "stdev": 0.3774905561001523,
+     "min": 0.7924335378323111,
+     "max": 1.4465702286514233,
+     "values": [
+      1.4465702286514233,
+      0.7924335378323111,
+      0.7930416986441544
+     ]
+    },
+    "wall_s": {
+     "n": 3,
+     "mean": 142.59170879533485,
+     "stdev": 19.262130323169185,
+     "min": 127.51637919600034,
+     "max": 164.29201786400517,
+     "values": [
+      127.51637919600034,
+      164.29201786400517,
+      135.96672932599904
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 3,
+     "mean": 68.6,
+     "stdev": 0.0,
+     "min": 68.6,
+     "max": 68.6,
+     "values": [
+      68.6,
+      68.6,
+      68.6
+     ]
+    },
+    "hits": {
+     "n": 3,
+     "mean": 14491.0,
+     "stdev": 0.0,
+     "min": 14491,
+     "max": 14491,
+     "values": [
+      14491,
+      14491,
+      14491
+     ]
+    },
+    "misses": {
+     "n": 3,
+     "mean": 6629.0,
+     "stdev": 0.0,
+     "min": 6629,
+     "max": 6629,
+     "values": [
+      6629,
+      6629,
+      6629
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 3,
+     "mean": 835.3733333333333,
+     "stdev": 254.16573379063772,
+     "min": 555.51,
+     "max": 1051.84,
+     "values": [
+      555.51,
+      1051.84,
+      898.77
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 3,
+     "mean": 119.71333333333332,
+     "stdev": 46.803066494978005,
+     "min": 73.42,
+     "max": 167.01,
+     "values": [
+      73.42,
+      118.71,
+      167.01
+     ]
+    },
+    "step_ms_tok": {
+     "n": 3,
+     "mean": 1068.7333333333333,
+     "stdev": 329.2917601965366,
+     "min": 688.5,
+     "max": 1259.0,
+     "values": [
+      688.5,
+      1259.0,
+      1258.7
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 3,
+     "mean": 958.1833333333334,
+     "stdev": 287.7993680210805,
+     "min": 631.3,
+     "max": 1173.48,
+     "values": [
+      631.3,
+      1173.48,
+      1069.77
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 3,
+     "mean": 95.94,
+     "stdev": 60.991631393167374,
+     "min": 48.68,
+     "max": 164.79,
+     "values": [
+      48.68,
+      74.35,
+      164.79
+     ]
+    },
+    "router_ms_tok": {
+     "n": 3,
+     "mean": 2.216666666666667,
+     "stdev": 0.7350056689123786,
+     "min": 1.6,
+     "max": 3.03,
+     "values": [
+      1.6,
+      2.02,
+      3.03
+     ]
+    },
+    "fetch_share": {
+     "n": 3,
+     "mean": 0.7854479694879496,
+     "stdev": 0.06346944742183436,
+     "min": 0.7140462381822514,
+     "max": 0.8354567116759332,
+     "values": [
+      0.8068409586056645,
+      0.8354567116759332,
+      0.7140462381822514
+     ]
+    },
+    "expert_read_gb": {
+     "n": 3,
+     "mean": 20.974437717333334,
+     "stdev": 0.011789909162558492,
+     "min": 20.961652736,
+     "max": 20.984881152,
+     "values": [
+      20.976779264,
+      20.961652736,
+      20.984881152
+     ]
+    },
+    "disk_read_gb": {
+     "n": 3,
+     "mean": 20.991128917333334,
+     "stdev": 0.01270188113978829,
+     "min": 20.97647616,
+     "max": 20.999012352,
+     "values": [
+      20.99789824,
+      20.97647616,
+      20.999012352
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 3,
+     "mean": 6.2,
+     "stdev": 0.0,
+     "min": 6.2,
+     "max": 6.2,
+     "values": [
+      6.2,
+      6.2,
+      6.2
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 3,
+     "mean": 6.196038564046224,
+     "stdev": 0.00010798580803203403,
+     "min": 6.195972442626953,
+     "max": 6.196163177490234,
+     "values": [
+      6.195980072021484,
+      6.195972442626953,
+      6.196163177490234
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 3,
+     "mean": 323.0,
+     "stdev": 0.0,
+     "min": 323,
+     "max": 323,
+     "values": [
+      323,
+      323,
+      323
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 3,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 3,
+     "mean": 24.0,
+     "stdev": 0.0,
+     "min": 24,
+     "max": 24,
+     "values": [
+      24,
+      24,
+      24
+     ]
+    },
+    "gen_tokens": {
+     "n": 3,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 3,
+     "mean": 27918.0,
+     "stdev": 2961.312715671886,
+     "min": 24514,
+     "max": 29901,
+     "values": [
+      29901,
+      29339,
+      24514
+     ]
+    }
+   },
+   "output_hashes": [
+    "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2"
+   ]
+  }
+ },
+ "raw_runs": [
+  {
+   "run_id": "cold_short_cap32_pilot0_rep1",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 127.51637919600034,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.195980072021484,
+   "ru_inblock_bytes": 20990910464,
+   "ru_utime_s": 361.673287,
+   "ru_stime_s": 119.070608,
+   "proc_read_bytes": 20976779264,
+   "proc_rchar": 20669150707,
+   "disk_read_bytes": 20997898240,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap32_pilot0_rep1.log",
+   "canary_ms_p50": 13.47560699650785,
+   "canary_ms_mean": 61.36348887457643,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 31.17,
+   "peak_rss_gb": 6.2,
+   "moe_ms_tok": 631.3,
+   "attn_ms_tok": 48.68,
+   "head_ms_tok": 7.29,
+   "router_ms_tok": 1.6,
+   "total_ms_tok": 687.27,
+   "step_ms_tok": 688.5,
+   "engine_tok_s": 0.61,
+   "gen_s": 52.6,
+   "gen_tokens": 32,
+   "hit_rate_pct": 68.6,
+   "hits": 14491,
+   "misses": 6629,
+   "fetch_ms_tok": 555.51,
+   "compute_ms_tok": 73.42,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 859,
+   "prefill_moe_ms": 29901,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 13,
+   "prefill_head_ms": 395,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 1.4465702286514233,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.8068409586056645,
+   "expert_read_gb": 20.976779264,
+   "disk_read_gb": 20.99789824,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap32_pilot0_rep1",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 165.65267326900357,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.224231719970703,
+   "ru_inblock_bytes": 50447130624,
+   "ru_utime_s": 743.26018,
+   "ru_stime_s": 175.452753,
+   "proc_read_bytes": 50447130624,
+   "proc_rchar": 53103867982,
+   "disk_read_bytes": 50461343744,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap32_pilot0_rep1.log",
+   "canary_ms_p50": 8.106621004117187,
+   "canary_ms_mean": 19.99624193786076,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 92.07,
+   "peak_rss_gb": 6.22,
+   "moe_ms_tok": 339.45,
+   "attn_ms_tok": 38.27,
+   "head_ms_tok": 7.17,
+   "router_ms_tok": 1.2,
+   "total_ms_tok": 384.9,
+   "step_ms_tok": 386.6,
+   "engine_tok_s": 0.31,
+   "gen_s": 104.1,
+   "gen_tokens": 32,
+   "hit_rate_pct": 74.4,
+   "hits": 54885,
+   "misses": 18843,
+   "fetch_ms_tok": 286.24,
+   "compute_ms_tok": 51.31,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2665,
+   "prefill_moe_ms": 87548,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 27,
+   "prefill_head_ms": 1775,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 2.5768911055694095,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.7404035178479048,
+   "expert_read_gb": 50.447130624,
+   "disk_read_gb": 50.461343744,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_short_cap12_pilot0_rep1",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 82.682287499003,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.823070526123047,
+   "ru_inblock_bytes": 32864137216,
+   "ru_utime_s": 252.699474,
+   "ru_stime_s": 69.001397,
+   "proc_read_bytes": 32805634048,
+   "proc_rchar": 33958475251,
+   "disk_read_bytes": 32864870400,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap12_pilot0_rep1.log",
+   "canary_ms_p50": 7.501066997065209,
+   "canary_ms_mean": 12.323985185503261,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 14.76,
+   "peak_rss_gb": 3.82,
+   "moe_ms_tok": 959.44,
+   "attn_ms_tok": 38.96,
+   "head_ms_tok": 7.29,
+   "router_ms_tok": 1.59,
+   "total_ms_tok": 1005.69,
+   "step_ms_tok": 1006.5,
+   "engine_tok_s": 0.7,
+   "gen_s": 46.0,
+   "gen_tokens": 32,
+   "hit_rate_pct": 44.8,
+   "hits": 9462,
+   "misses": 11658,
+   "fetch_ms_tok": 890.28,
+   "compute_ms_tok": 66.79,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 451,
+   "prefill_moe_ms": 14219,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 9,
+   "prefill_head_ms": 73,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 0.9923175416133162,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.8845305514157973,
+   "expert_read_gb": 32.805634048,
+   "disk_read_gb": 32.8648704,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap12_pilot0_rep1",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 167.83650396699522,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.8524742126464844,
+   "ru_inblock_bytes": 101572673536,
+   "ru_utime_s": 550.023669,
+   "ru_stime_s": 196.765545,
+   "proc_read_bytes": 101536100352,
+   "proc_rchar": 110381676622,
+   "disk_read_bytes": 101605175296,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap12_pilot0_rep1.log",
+   "canary_ms_p50": 8.333536999998614,
+   "canary_ms_mean": 30.608789125835756,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 75.83,
+   "peak_rss_gb": 3.85,
+   "moe_ms_tok": 622.27,
+   "attn_ms_tok": 39.15,
+   "head_ms_tok": 7.5,
+   "router_ms_tok": 1.4,
+   "total_ms_tok": 668.91,
+   "step_ms_tok": 670.7,
+   "engine_tok_s": 0.33,
+   "gen_s": 96.7,
+   "gen_tokens": 32,
+   "hit_rate_pct": 45.1,
+   "hits": 33288,
+   "misses": 40440,
+   "fetch_ms_tok": 542.55,
+   "compute_ms_tok": 77.56,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2075,
+   "prefill_moe_ms": 73135,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 26,
+   "prefill_head_ms": 535,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 1.4853857211308095,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.8089309676457431,
+   "expert_read_gb": 101.536100352,
+   "disk_read_gb": 101.605175296,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_short_cap32_pilot0_rep2",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 164.29201786400517,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.195972442626953,
+   "ru_inblock_bytes": 20975783936,
+   "ru_utime_s": 475.961383,
+   "ru_stime_s": 167.981037,
+   "proc_read_bytes": 20961652736,
+   "proc_rchar": 20666791411,
+   "disk_read_bytes": 20976476160,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap32_pilot0_rep2.log",
+   "canary_ms_p50": 9.210747994075064,
+   "canary_ms_mean": 43.86275449905952,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 30.98,
+   "peak_rss_gb": 6.2,
+   "moe_ms_tok": 1173.48,
+   "attn_ms_tok": 74.35,
+   "head_ms_tok": 9.16,
+   "router_ms_tok": 2.02,
+   "total_ms_tok": 1256.99,
+   "step_ms_tok": 1259.0,
+   "engine_tok_s": 0.46,
+   "gen_s": 70.1,
+   "gen_tokens": 32,
+   "hit_rate_pct": 68.6,
+   "hits": 14491,
+   "misses": 6629,
+   "fetch_ms_tok": 1051.84,
+   "compute_ms_tok": 118.71,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 700,
+   "prefill_moe_ms": 29339,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 22,
+   "prefill_head_ms": 916,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 0.7924335378323111,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.8354567116759332,
+   "expert_read_gb": 20.961652736,
+   "disk_read_gb": 20.97647616,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap32_pilot0_rep2",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 188.43937246900168,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.224437713623047,
+   "ru_inblock_bytes": 50474635264,
+   "ru_utime_s": 783.119735,
+   "ru_stime_s": 163.21343,
+   "proc_read_bytes": 50474635264,
+   "proc_rchar": 53103867982,
+   "disk_read_bytes": 50483773440,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap32_pilot0_rep2.log",
+   "canary_ms_p50": 8.346155998879112,
+   "canary_ms_mean": 16.331401063325757,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 76.27,
+   "peak_rss_gb": 6.22,
+   "moe_ms_tok": 738.84,
+   "attn_ms_tok": 113.56,
+   "head_ms_tok": 7.24,
+   "router_ms_tok": 1.76,
+   "total_ms_tok": 859.64,
+   "step_ms_tok": 861.9,
+   "engine_tok_s": 0.31,
+   "gen_s": 103.1,
+   "gen_tokens": 32,
+   "hit_rate_pct": 74.4,
+   "hits": 54885,
+   "misses": 18843,
+   "fetch_ms_tok": 648.03,
+   "compute_ms_tok": 88.27,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2918,
+   "prefill_moe_ms": 71830,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 35,
+   "prefill_head_ms": 1423,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 1.1554230339172569,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.7518621649843369,
+   "expert_read_gb": 50.474635264,
+   "disk_read_gb": 50.48377344,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_short_cap12_pilot0_rep2",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 90.16972118999547,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.823162078857422,
+   "ru_inblock_bytes": 32861196288,
+   "ru_utime_s": 256.88826,
+   "ru_stime_s": 96.608653,
+   "proc_read_bytes": 32788561920,
+   "proc_rchar": 33940485619,
+   "disk_read_bytes": 32863272960,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap12_pilot0_rep2.log",
+   "canary_ms_p50": 8.642979999422096,
+   "canary_ms_mean": 28.70246206248339,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 19.04,
+   "peak_rss_gb": 3.82,
+   "moe_ms_tok": 541.67,
+   "attn_ms_tok": 34.46,
+   "head_ms_tok": 7.45,
+   "router_ms_tok": 1.38,
+   "total_ms_tok": 583.57,
+   "step_ms_tok": 584.3,
+   "engine_tok_s": 0.86,
+   "gen_s": 37.2,
+   "gen_tokens": 32,
+   "hit_rate_pct": 44.8,
+   "hits": 9462,
+   "misses": 11658,
+   "fetch_ms_tok": 480.62,
+   "compute_ms_tok": 58.88,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 534,
+   "prefill_moe_ms": 18431,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 8,
+   "prefill_head_ms": 57,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 1.7070484581497793,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.8225569056991272,
+   "expert_read_gb": 32.78856192,
+   "disk_read_gb": 32.86327296,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap12_pilot0_rep2",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 129.50920417199814,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.8518753051757812,
+   "ru_inblock_bytes": 101568180224,
+   "ru_utime_s": 601.50567,
+   "ru_stime_s": 163.126544,
+   "proc_read_bytes": 101568180224,
+   "proc_rchar": 110426798158,
+   "disk_read_bytes": 101580152832,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap12_pilot0_rep2.log",
+   "canary_ms_p50": 11.487912001030054,
+   "canary_ms_mean": 29.13501887678649,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 72.87,
+   "peak_rss_gb": 3.85,
+   "moe_ms_tok": 745.71,
+   "attn_ms_tok": 49.86,
+   "head_ms_tok": 7.15,
+   "router_ms_tok": 1.72,
+   "total_ms_tok": 802.73,
+   "step_ms_tok": 803.9,
+   "engine_tok_s": 0.33,
+   "gen_s": 97.8,
+   "gen_tokens": 32,
+   "hit_rate_pct": 45.1,
+   "hits": 33288,
+   "misses": 40440,
+   "fetch_ms_tok": 662.65,
+   "compute_ms_tok": 80.57,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2143,
+   "prefill_moe_ms": 70458,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 24,
+   "prefill_head_ms": 181,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 1.2434817488969117,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.8242940664261724,
+   "expert_read_gb": 101.568180224,
+   "disk_read_gb": 101.580152832,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_short_cap32_pilot0_rep3",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 3,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 135.96672932599904,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.196163177490234,
+   "ru_inblock_bytes": 20999012352,
+   "ru_utime_s": 516.380622,
+   "ru_stime_s": 107.447752,
+   "proc_read_bytes": 20984881152,
+   "proc_rchar": 20669150707,
+   "disk_read_bytes": 20999012352,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap32_pilot0_rep3.log",
+   "canary_ms_p50": 8.648399001685902,
+   "canary_ms_mean": 15.35580912604928,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 25.61,
+   "peak_rss_gb": 6.2,
+   "moe_ms_tok": 1069.77,
+   "attn_ms_tok": 164.79,
+   "head_ms_tok": 22.43,
+   "router_ms_tok": 3.03,
+   "total_ms_tok": 1257.0,
+   "step_ms_tok": 1258.7,
+   "engine_tok_s": 0.49,
+   "gen_s": 64.7,
+   "gen_tokens": 32,
+   "hit_rate_pct": 68.6,
+   "hits": 14491,
+   "misses": 6629,
+   "fetch_ms_tok": 898.77,
+   "compute_ms_tok": 167.01,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 720,
+   "prefill_moe_ms": 24514,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 13,
+   "prefill_head_ms": 362,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 0.7930416986441544,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.7140462381822514,
+   "expert_read_gb": 20.984881152,
+   "disk_read_gb": 20.999012352,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap32_pilot0_rep3",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 3,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 160.85855584999808,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.224311828613281,
+   "ru_inblock_bytes": 50467123200,
+   "ru_utime_s": 774.139918,
+   "ru_stime_s": 146.872254,
+   "proc_read_bytes": 50448343040,
+   "proc_rchar": 53072017486,
+   "disk_read_bytes": 50501193728,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap32_pilot0_rep3.log",
+   "canary_ms_p50": 8.902919005777221,
+   "canary_ms_mean": 19.83441693801069,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 71.4,
+   "peak_rss_gb": 6.22,
+   "moe_ms_tok": 834.63,
+   "attn_ms_tok": 66.46,
+   "head_ms_tok": 7.14,
+   "router_ms_tok": 1.7,
+   "total_ms_tok": 908.23,
+   "step_ms_tok": 910.4,
+   "engine_tok_s": 0.32,
+   "gen_s": 99.7,
+   "gen_tokens": 32,
+   "hit_rate_pct": 74.4,
+   "hits": 54885,
+   "misses": 18843,
+   "fetch_ms_tok": 726.31,
+   "compute_ms_tok": 105.87,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2634,
+   "prefill_moe_ms": 67671,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 35,
+   "prefill_head_ms": 971,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 1.0954063604240283,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.7977921792618629,
+   "expert_read_gb": 50.44834304,
+   "disk_read_gb": 50.501193728,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_short_cap12_pilot0_rep3",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 3,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 73.23192303199903,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.8233718872070312,
+   "ru_inblock_bytes": 32894705664,
+   "ru_utime_s": 229.617432,
+   "ru_stime_s": 69.108564,
+   "proc_read_bytes": 32878219264,
+   "proc_rchar": 34014803443,
+   "disk_read_bytes": 32894803968,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_short_cap12_pilot0_rep3.log",
+   "canary_ms_p50": 11.636535004072357,
+   "canary_ms_mean": 106.30497825059138,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 17.32,
+   "peak_rss_gb": 3.82,
+   "moe_ms_tok": 454.43,
+   "attn_ms_tok": 35.67,
+   "head_ms_tok": 7.24,
+   "router_ms_tok": 1.39,
+   "total_ms_tok": 497.34,
+   "step_ms_tok": 498.0,
+   "engine_tok_s": 0.98,
+   "gen_s": 32.8,
+   "gen_tokens": 32,
+   "hit_rate_pct": 44.8,
+   "hits": 9462,
+   "misses": 11658,
+   "fetch_ms_tok": 397.03,
+   "compute_ms_tok": 55.25,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 544,
+   "prefill_moe_ms": 16724,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 8,
+   "prefill_head_ms": 31,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 2.0025839793281657,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.7972489959839357,
+   "expert_read_gb": 32.878219264,
+   "disk_read_gb": 32.894803968,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_medium_cap12_pilot0_rep3",
+   "arm": "optimized",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "medium",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 3,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.optimized 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/ab/prompts/rendered/medium.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "06184142cf9766efbb035d5a69e55789d3928f193e966b36978e64889797dcf5",
+   "exit_code": 0,
+   "wall_s": 151.91554250199988,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.8513145446777344,
+   "ru_inblock_bytes": 101649235968,
+   "ru_utime_s": 603.914449,
+   "ru_stime_s": 175.265102,
+   "proc_read_bytes": 101595127808,
+   "proc_rchar": 110355134542,
+   "disk_read_bytes": 101649625088,
+   "gpu_mem_idle_mib": 323,
+   "gpu_mem_peak_mib": 323,
+   "expert_bytes": 2654208,
+   "log": "optimized/raw/cold_medium_cap12_pilot0_rep3.log",
+   "canary_ms_p50": 7.723310998699162,
+   "canary_ms_mean": 12.322957624746778,
+   "prompt_tokens": 161,
+   "dec_tokens": 31,
+   "ttft_s": 75.23,
+   "peak_rss_gb": 3.85,
+   "moe_ms_tok": 794.31,
+   "attn_ms_tok": 53.62,
+   "head_ms_tok": 7.17,
+   "router_ms_tok": 1.59,
+   "total_ms_tok": 855.1,
+   "step_ms_tok": 856.5,
+   "engine_tok_s": 0.31,
+   "gen_s": 101.8,
+   "gen_tokens": 32,
+   "hit_rate_pct": 45.1,
+   "hits": 33288,
+   "misses": 40440,
+   "fetch_ms_tok": 715.1,
+   "compute_ms_tok": 76.88,
+   "prefill_tokens": 161,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 2238,
+   "prefill_moe_ms": 72840,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 30,
+   "prefill_head_ms": 57,
+   "text": "## Bugs Found\n\n### 1. **Incomplete Function**\nThe function is missing the Linux implementation and fallback logic. The docstring mentions Linux uses `posix_f",
+   "decode_tok_s": 1.166729394053444,
+   "logits_sha256": "73075c7a0ca07c1abe77465e704dfa193c55a75d363131ccf1ded7e6e049d067",
+   "ok": true,
+   "fetch_share": 0.8349095154699359,
+   "expert_read_gb": 101.595127808,
+   "disk_read_gb": 101.649625088,
+   "gpu_mem_delta_mib": 0
+  }
+ ]
+}

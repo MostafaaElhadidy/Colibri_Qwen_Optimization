@@ -1,0 +1,2 @@
+make -C c qwen36  (gcc -O3 -march=native -fopenmp -pthread ... qwen36.c -o qwen36 -lm)
+36ff0d1fe1a58e1387eea07ea06a8ba510f8ddfcd160b406a6600d0ae75da37f  benchmarks/expert_cache_research/bin/qwen36.baseline

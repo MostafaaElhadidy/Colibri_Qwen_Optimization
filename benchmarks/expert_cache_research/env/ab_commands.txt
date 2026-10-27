@@ -1,0 +1,2 @@
+python3 run_bench.py --snap ~/colibri-models/qwen3-coder-30b --arm baseline=bin/qwen36.baseline --arm optimized=bin/qwen36.optimized:COLI_Q36_MISS_QD=8 --modes cold --caps 32,12 --pilot 0 --prompts short,medium --reps 3 --n-new 32 --out ab
+python3 run_bench.py --snap ~/colibri-models/qwen3-coder-30b --arm flagoff=bin/qwen36.optimized --modes cold --caps 32,12 --pilot 0 --prompts short,medium --reps 1 --n-new 32 --out ab

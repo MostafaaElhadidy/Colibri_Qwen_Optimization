@@ -1,0 +1,1 @@
+python3 run_bench.py --snap ~/colibri-models/qwen3-coder-30b --arm baseline=bin/qwen36.baseline --modes cold,warm --caps 32,12 --pilot 0,1 --prompts short,medium,long --reps 3 --n-new 32 --out .
