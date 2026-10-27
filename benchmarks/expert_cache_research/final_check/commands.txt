@@ -1,0 +1,2 @@
+# run from benchmarks/expert_cache_research/: ORDER=last made the waves default (bin/qwen36.v5)
+python3 run_bench.py --snap ~/colibri-models/qwen3-coder-30b --arm baseline=bin/qwen36.baseline --arm v5flagoff=bin/qwen36.v5 --arm v5waves=bin/qwen36.v5:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 --modes cold --caps 32 --pilot 0 --prompts short --reps 1 --n-new 32 --out final_check

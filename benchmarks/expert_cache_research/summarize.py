@@ -24,6 +24,7 @@ METRICS = [
     "attn_ms_tok", "router_ms_tok", "fetch_share", "expert_read_gb", "disk_read_gb",
     "load_ms_per_miss", "peak_rss_gb", "ru_maxrss_gb", "gpu_mem_peak_mib",
     "gpu_mem_delta_mib", "prompt_tokens", "gen_tokens", "prefill_moe_ms",
+    "ru_minflt", "ru_majflt", "waves_waves", "waves_experts", "decode_misses", "prefill_misses",
 ]
 
 

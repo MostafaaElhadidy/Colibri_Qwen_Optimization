@@ -1,0 +1,8 @@
+# Phase 0/1 A/B (docs/expert_cache_research_2.md), run from benchmarks/expert_cache_research/
+# binary: bin/qwen36.v2 (this branch's c/qwen36, uncommitted working tree), every arm has COLI_Q36_MISS_QD=8
+python3 run_bench.py --snap ~/colibri-models/qwen3-coder-30b \
+  --arm qd8=bin/qwen36.v2:COLI_Q36_MISS_QD=8 \
+  --arm arena=bin/qwen36.v2:COLI_Q36_MISS_QD=8,COLI_Q36_SLOT_ARENA=1 \
+  --arm waves=bin/qwen36.v2:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 \
+  --arm both=bin/qwen36.v2:COLI_Q36_MISS_QD=8,COLI_Q36_SLOT_ARENA=1,COLI_Q36_PREFILL_WAVES=1 \
+  --modes cold --caps 32,12 --pilot 0 --prompts short,medium,long --reps 3 --n-new 32 --out ab2

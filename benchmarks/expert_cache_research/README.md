@@ -85,3 +85,15 @@ python3 compare.py ab/baseline ab/optimized --out comparison.md --title "COLI_Q3
 | disk I/O | `read_bytes` from `/proc/<pid>/io`, `ru_inblock` from `wait4`, and the change in `/proc/diskstats` sectors for the volume |
 | RAM / VRAM | the engine's `PEAK RSS`, `ru_maxrss` from `wait4`, and `VmHWM` (warm). nvidia-smi is sampled every 200 ms; values are peak minus idle |
 | correctness | the sha256 of the `DUMP=` last-token float32 logits, plus the decoded text |
+
+## Part 2 (docs/expert_cache_research_2.md)
+
+| dir | what | commands |
+|---|---|---|
+| `phase0/` | per-miss fault/time profile (`COLI_Q36_FAULT_PROF=1`), slot microbenchmark, host working-set samples | `phase0/run_profile.sh`, `run_smoke.sh`, `host_ws_sample.sh`, `slotbench.c` |
+| `ab2/` | main A/B (A = `COLI_Q36_MISS_QD=8` vs +arena, +waves, +both) and correctness (frozen original, flag-off) | `ab2/commands.txt`, `ab2/commands_followup.txt` |
+| `chunk/` | waves planning size 32…whole, 514-token prompt | `ab2/commands_followup.txt` §2 |
+| `grouped/` | `COLI_Q36_PREFILL_GROUPED=1` vs waves alone | `ab2/commands_followup.txt` §3 |
+| `order/` | `COLI_Q36_PREFILL_WAVES_ORDER=last` vs first-seen; token path's decode misses | `order/commands.txt` |
+
+Rows now also carry `ru_minflt`/`ru_majflt`, the host canary (`host_free_mb`, `host_vm_ws_mb`, WSL only), the `[waves]` counters and timers, and `prefill_misses`/`decode_misses` (from the `[timers] prefill cache:` line of `qwen36.v4`+). `ab2/report_tables.py` turns `compare.py` outputs into the report's tables.

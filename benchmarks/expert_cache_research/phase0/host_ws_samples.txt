@@ -1,0 +1,6 @@
+07:08:06 guest_rss_mb=531 host: vm_ws_mb/vm_commit_mb/host_free_mb=3351 9205 2985
+07:08:19 guest_rss_mb=2144 host: vm_ws_mb/vm_commit_mb/host_free_mb=6163 10549 1383
+07:08:35 guest_rss_mb=4157 host: vm_ws_mb/vm_commit_mb/host_free_mb=876 11289 4
+07:08:49 guest_rss_mb=6022 host: vm_ws_mb/vm_commit_mb/host_free_mb=984 12311 36
+07:09:04 guest_rss_mb=6345 host: vm_ws_mb/vm_commit_mb/host_free_mb=4528 12311 1069
+07:09:17 guest_rss_mb=6345 host: vm_ws_mb/vm_commit_mb/host_free_mb=6705 12310 1033

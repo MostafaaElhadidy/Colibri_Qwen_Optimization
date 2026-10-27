@@ -21,11 +21,13 @@ ROWS = [
     ("engine_tok_s", "end-to-end tok/s (engine)", +1),
     ("hit_rate_pct", "expert hit rate (%)", +1),
     ("misses", "expert misses", -1),
+    ("decode_misses", "expert misses in decode", -1),
     ("est_misses", "expert misses (from bytes read)", -1),
     ("fetch_ms_tok", "decode expert fetch (ms/token)", -1),
     ("expert_read_gb", "bytes read by engine (GB)", -1),
     ("load_ms_per_miss", "expert load latency (ms/miss)", -1),
     ("peak_rss_gb", "peak RSS (GB)", -1),
+    ("ru_minflt", "minor page faults", -1),
     ("gpu_mem_delta_mib", "peak VRAM above idle (MiB)", -1),
 ]
 

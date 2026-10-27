@@ -1,0 +1,10 @@
+# run from benchmarks/expert_cache_research/; bin/qwen36.v4 = v3 + COLI_Q36_PREFILL_WAVES_ORDER=last
+# (off unless set) + the "[timers] prefill cache:" line that splits misses into prefill and decode
+S=~/colibri-models/qwen3-coder-30b
+python3 run_bench.py --snap $S \
+  --arm first=bin/qwen36.v4:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 \
+  --arm last=bin/qwen36.v4:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_ORDER=last \
+  --modes cold --caps 32,12 --pilot 0 --prompts short,medium,long --reps 3 --n-new 32 --out order
+# the token path's decode-only misses (deterministic with PILOT=0, so one rep)
+python3 run_bench.py --snap $S --arm token=bin/qwen36.v4:COLI_Q36_MISS_QD=8 \
+  --modes cold --caps 32,12 --pilot 0 --prompts short,medium,long --reps 1 --n-new 32 --out order

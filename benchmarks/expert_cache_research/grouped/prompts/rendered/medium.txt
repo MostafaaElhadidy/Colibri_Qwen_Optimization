@@ -1,0 +1,19 @@
+<|im_start|>user
+Review the following Python function. List any bugs, explain each one, and give a corrected version with type hints.
+
+```python
+def evict_cache(ram_gb, snap_dir=None):
+    """Evict resident page cache pages without privileges.
+
+    macOS `purge` needs root; Linux uses posix_fadvise(DONTNEED) over the
+    model's safetensors shards to drop cached pages instantly with 0 disk writes.
+    The fallback writes a temp file larger than RAM when no direct method exists.
+    Returns True if an eviction was actually attempted.
+    """
+    if sys.platform == "darwin":
+        r = subprocess.run(["purge"], capture_output=True)
+        if r.returncode == 0:
+            return True
+
+```<|im_end|>
+<|im_start|>assistant

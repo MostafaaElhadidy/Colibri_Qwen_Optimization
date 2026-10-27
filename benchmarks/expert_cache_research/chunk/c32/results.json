@@ -1,0 +1,1016 @@
+{
+ "invocations": [
+  {
+   "argv": [
+    "run_bench.py",
+    "--snap",
+    "/home/mostafa/colibri-models/qwen3-coder-30b",
+    "--arm",
+    "c32=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=32",
+    "--arm",
+    "c64=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=64",
+    "--arm",
+    "c128=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=128",
+    "--arm",
+    "c256=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=256",
+    "--arm",
+    "call=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1",
+    "--modes",
+    "cold",
+    "--caps",
+    "32,12",
+    "--pilot",
+    "0",
+    "--prompts",
+    "long",
+    "--reps",
+    "2",
+    "--n-new",
+    "32",
+    "--out",
+    "chunk"
+   ],
+   "arm": {
+    "name": "c32",
+    "binary": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.v3",
+    "env": {
+     "COLI_Q36_MISS_QD": "8",
+     "COLI_Q36_PREFILL_WAVES": "1",
+     "COLI_Q36_PREFILL_WAVES_CHUNK": "32"
+    },
+    "sha256": "562a03d63564ca6b6c9ca0013197ca506685a82568cca703a7db7d32daf8bfd7"
+   },
+   "snap": "/home/mostafa/colibri-models/qwen3-coder-30b",
+   "device": "sdd",
+   "expert_bytes": 2654208,
+   "common_env": {
+    "COLI_TIMERS": "1",
+    "COLI_LOOKUP": "0",
+    "COLI_KV_PREFIX": "0",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "cores"
+   },
+   "started": "2026-10-27T12:38:20"
+  }
+ ],
+ "cells": {
+  "cold|cold-process|long|cap12|pilot0": {
+   "runs": 2,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 2,
+     "mean": 220.53,
+     "stdev": 16.150318882300727,
+     "min": 209.11,
+     "max": 231.95,
+     "values": [
+      209.11,
+      231.95
+     ]
+    },
+    "engine_tok_s": {
+     "n": 2,
+     "mean": 0.12,
+     "stdev": 0.014142135623730952,
+     "min": 0.11,
+     "max": 0.13,
+     "values": [
+      0.13,
+      0.11
+     ]
+    },
+    "decode_tok_s": {
+     "n": 2,
+     "mean": 0.6812814931301092,
+     "stdev": 0.25465585504911376,
+     "min": 0.5012126111560224,
+     "max": 0.8613503751041961,
+     "values": [
+      0.8613503751041961,
+      0.5012126111560224
+     ]
+    },
+    "wall_s": {
+     "n": 2,
+     "mean": 312.0946011269989,
+     "stdev": 16.42093643552027,
+     "min": 300.48324562000926,
+     "max": 323.70595663398854,
+     "values": [
+      300.48324562000926,
+      323.70595663398854
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 2,
+     "mean": 77.6,
+     "stdev": 0.0,
+     "min": 77.6,
+     "max": 77.6,
+     "values": [
+      77.6,
+      77.6
+     ]
+    },
+    "hits": {
+     "n": 2,
+     "mean": 162345.0,
+     "stdev": 0.0,
+     "min": 162345,
+     "max": 162345,
+     "values": [
+      162345,
+      162345
+     ]
+    },
+    "misses": {
+     "n": 2,
+     "mean": 46935.0,
+     "stdev": 0.0,
+     "min": 46935,
+     "max": 46935,
+     "values": [
+      46935,
+      46935
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 2,
+     "mean": 1331.36,
+     "stdev": 465.2621198851245,
+     "min": 1002.37,
+     "max": 1660.35,
+     "values": [
+      1002.37,
+      1660.35
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 2,
+     "mean": 131.98,
+     "stdev": 99.74448255417438,
+     "min": 61.45,
+     "max": 202.51,
+     "values": [
+      61.45,
+      202.51
+     ]
+    },
+    "step_ms_tok": {
+     "n": 2,
+     "mean": 1574.8000000000002,
+     "stdev": 592.4140612780894,
+     "min": 1155.9,
+     "max": 1993.7,
+     "values": [
+      1155.9,
+      1993.7
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 2,
+     "mean": 1466.535,
+     "stdev": 565.1550948633482,
+     "min": 1066.91,
+     "max": 1866.16,
+     "values": [
+      1066.91,
+      1866.16
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 2,
+     "mean": 92.695,
+     "stdev": 28.14992095903645,
+     "min": 72.79,
+     "max": 112.6,
+     "values": [
+      72.79,
+      112.6
+     ]
+    },
+    "router_ms_tok": {
+     "n": 2,
+     "mean": 2.33,
+     "stdev": 0.09899494936611675,
+     "min": 2.26,
+     "max": 2.4,
+     "values": [
+      2.26,
+      2.4
+     ]
+    },
+    "fetch_share": {
+     "n": 2,
+     "mean": 0.8499877030675869,
+     "stdev": 0.024309466170675347,
+     "min": 0.8327983146912774,
+     "max": 0.8671770914438964,
+     "values": [
+      0.8671770914438964,
+      0.8327983146912774
+     ]
+    },
+    "expert_read_gb": {
+     "n": 2,
+     "mean": 120.959741952,
+     "stdev": 0.38175095357879424,
+     "min": 120.689803264,
+     "max": 121.22968064,
+     "values": [
+      121.22968064,
+      120.689803264
+     ]
+    },
+    "disk_read_gb": {
+     "n": 2,
+     "mean": 121.111691264,
+     "stdev": 0.3020676900334316,
+     "min": 120.898097152,
+     "max": 121.325285376,
+     "values": [
+      121.325285376,
+      120.898097152
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 2,
+     "mean": 3.93,
+     "stdev": 0.0,
+     "min": 3.93,
+     "max": 3.93,
+     "values": [
+      3.93,
+      3.93
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 2,
+     "mean": 3.932373046875,
+     "stdev": 4.315837287515549e-05,
+     "min": 3.932342529296875,
+     "max": 3.932403564453125,
+     "values": [
+      3.932342529296875,
+      3.932403564453125
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 2,
+     "mean": 252.0,
+     "stdev": 0.0,
+     "min": 252,
+     "max": 252,
+     "values": [
+      252,
+      252
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 2,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 2,
+     "mean": 514.0,
+     "stdev": 0.0,
+     "min": 514,
+     "max": 514,
+     "values": [
+      514,
+      514
+     ]
+    },
+    "gen_tokens": {
+     "n": 2,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 2,
+     "mean": 208896.0,
+     "stdev": 13258.252147247766,
+     "min": 199521,
+     "max": 218271,
+     "values": [
+      199521,
+      218271
+     ]
+    },
+    "ru_minflt": {
+     "n": 2,
+     "mean": 3257320.5,
+     "stdev": 31635.25028350495,
+     "min": 3234951,
+     "max": 3279690,
+     "values": [
+      3279690,
+      3234951
+     ]
+    },
+    "ru_majflt": {
+     "n": 2,
+     "mean": 2.5,
+     "stdev": 0.7071067811865476,
+     "min": 2,
+     "max": 3,
+     "values": [
+      2,
+      3
+     ]
+    },
+    "waves_waves": {
+     "n": 2,
+     "mean": 4270.0,
+     "stdev": 0.0,
+     "min": 4270,
+     "max": 4270,
+     "values": [
+      4270,
+      4270
+     ]
+    },
+    "waves_experts": {
+     "n": 2,
+     "mean": 46899.0,
+     "stdev": 0.0,
+     "min": 46899,
+     "max": 46899,
+     "values": [
+      46899,
+      46899
+     ]
+    }
+   },
+   "output_hashes": [
+    "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53"
+   ]
+  },
+  "cold|cold-process|long|cap32|pilot0": {
+   "runs": 2,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 2,
+     "mean": 239.07,
+     "stdev": 54.235090117008205,
+     "min": 200.72,
+     "max": 277.42,
+     "values": [
+      200.72,
+      277.42
+     ]
+    },
+    "engine_tok_s": {
+     "n": 2,
+     "mean": 0.125,
+     "stdev": 0.03535533905932737,
+     "min": 0.1,
+     "max": 0.15,
+     "values": [
+      0.15,
+      0.1
+     ]
+    },
+    "decode_tok_s": {
+     "n": 2,
+     "mean": 1.5375908738206807,
+     "stdev": 0.8531852898759199,
+     "min": 0.9342977697408075,
+     "max": 2.140883977900554,
+     "values": [
+      2.140883977900554,
+      0.9342977697408075
+     ]
+    },
+    "wall_s": {
+     "n": 2,
+     "mean": 355.2071417355037,
+     "stdev": 104.9469500857881,
+     "min": 280.9984416649968,
+     "max": 429.4158418060106,
+     "values": [
+      280.9984416649968,
+      429.4158418060106
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 2,
+     "mean": 84.5,
+     "stdev": 0.0,
+     "min": 84.5,
+     "max": 84.5,
+     "values": [
+      84.5,
+      84.5
+     ]
+    },
+    "hits": {
+     "n": 2,
+     "mean": 176903.0,
+     "stdev": 0.0,
+     "min": 176903,
+     "max": 176903,
+     "values": [
+      176903,
+      176903
+     ]
+    },
+    "misses": {
+     "n": 2,
+     "mean": 32377.0,
+     "stdev": 0.0,
+     "min": 32377,
+     "max": 32377,
+     "values": [
+      32377,
+      32377
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 2,
+     "mean": 591.225,
+     "stdev": 351.83512111499044,
+     "min": 342.44,
+     "max": 840.01,
+     "values": [
+      342.44,
+      840.01
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 2,
+     "mean": 100.005,
+     "stdev": 64.77805222449962,
+     "min": 54.2,
+     "max": 145.81,
+     "values": [
+      54.2,
+      145.81
+     ]
+    },
+    "step_ms_tok": {
+     "n": 2,
+     "mean": 767.4,
+     "stdev": 425.5368609180643,
+     "min": 466.5,
+     "max": 1068.3,
+     "values": [
+      466.5,
+      1068.3
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 2,
+     "mean": 693.835,
+     "stdev": 416.90308711977656,
+     "min": 399.04,
+     "max": 988.63,
+     "values": [
+      399.04,
+      988.63
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 2,
+     "mean": 63.894999999999996,
+     "stdev": 8.167083322704627,
+     "min": 58.12,
+     "max": 69.67,
+     "values": [
+      58.12,
+      69.67
+     ]
+    },
+    "router_ms_tok": {
+     "n": 2,
+     "mean": 1.795,
+     "stdev": 0.2616295090390225,
+     "min": 1.61,
+     "max": 1.98,
+     "values": [
+      1.61,
+      1.98
+     ]
+    },
+    "fetch_share": {
+     "n": 2,
+     "mean": 0.7601837549997548,
+     "stdev": 0.03694150676503519,
+     "min": 0.7340621650589496,
+     "max": 0.7863053449405598,
+     "values": [
+      0.7340621650589496,
+      0.7863053449405598
+     ]
+    },
+    "expert_read_gb": {
+     "n": 2,
+     "mean": 86.30364979199999,
+     "stdev": 0.28386148929753596,
+     "min": 86.102929408,
+     "max": 86.504370176,
+     "values": [
+      86.504370176,
+      86.102929408
+     ]
+    },
+    "disk_read_gb": {
+     "n": 2,
+     "mean": 86.41025638400001,
+     "stdev": 0.3314594375784565,
+     "min": 86.175879168,
+     "max": 86.6446336,
+     "values": [
+      86.6446336,
+      86.175879168
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 2,
+     "mean": 6.31,
+     "stdev": 0.0,
+     "min": 6.31,
+     "max": 6.31,
+     "values": [
+      6.31,
+      6.31
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 2,
+     "mean": 6.307868957519531,
+     "stdev": 3.776357626576105e-05,
+     "min": 6.307842254638672,
+     "max": 6.307895660400391,
+     "values": [
+      6.307842254638672,
+      6.307895660400391
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 2,
+     "mean": 252.0,
+     "stdev": 0.0,
+     "min": 252,
+     "max": 252,
+     "values": [
+      252,
+      252
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 2,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0,
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 2,
+     "mean": 514.0,
+     "stdev": 0.0,
+     "min": 514,
+     "max": 514,
+     "values": [
+      514,
+      514
+     ]
+    },
+    "gen_tokens": {
+     "n": 2,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32,
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 2,
+     "mean": 226015.0,
+     "stdev": 51829.51284741156,
+     "min": 189366,
+     "max": 262664,
+     "values": [
+      189366,
+      262664
+     ]
+    },
+    "ru_minflt": {
+     "n": 2,
+     "mean": 3828094.0,
+     "stdev": 18581.351996020097,
+     "min": 3814955,
+     "max": 3841233,
+     "values": [
+      3841233,
+      3814955
+     ]
+    },
+    "ru_majflt": {
+     "n": 2,
+     "mean": 2.5,
+     "stdev": 0.7071067811865476,
+     "min": 2,
+     "max": 3,
+     "values": [
+      3,
+      2
+     ]
+    },
+    "waves_waves": {
+     "n": 2,
+     "mean": 1841.0,
+     "stdev": 0.0,
+     "min": 1841,
+     "max": 1841,
+     "values": [
+      1841,
+      1841
+     ]
+    },
+    "waves_experts": {
+     "n": 2,
+     "mean": 46899.0,
+     "stdev": 0.0,
+     "min": 46899,
+     "max": 46899,
+     "values": [
+      46899,
+      46899
+     ]
+    }
+   },
+   "output_hashes": [
+    "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53"
+   ]
+  }
+ },
+ "raw_runs": [
+  {
+   "run_id": "cold_long_cap32_pilot0_rep1",
+   "arm": "c32",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "long",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.v3 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/chunk/prompts/rendered/long.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_Q36_PREFILL_WAVES": "1",
+    "COLI_Q36_PREFILL_WAVES_CHUNK": "32",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "562a03d63564ca6b6c9ca0013197ca506685a82568cca703a7db7d32daf8bfd7",
+   "exit_code": 0,
+   "wall_s": 280.9984416649968,
+   "pagecache_resident_before_bytes": 262144,
+   "ru_maxrss_gb": 6.307842254638672,
+   "ru_inblock_bytes": 86517764096,
+   "ru_utime_s": 660.450125,
+   "ru_stime_s": 234.517817,
+   "ru_minflt": 3841233,
+   "ru_majflt": 3,
+   "proc_read_bytes": 86504370176,
+   "proc_rchar": 89009700409,
+   "disk_read_bytes": 86644633600,
+   "gpu_mem_idle_mib": 252,
+   "gpu_mem_peak_mib": 252,
+   "expert_bytes": 2654208,
+   "log": "c32/raw/cold_long_cap32_pilot0_rep1.log",
+   "canary_ms_p50": 5.633123000734486,
+   "canary_ms_mean": 10.37618468853907,
+   "host_free_mb": 1188,
+   "host_vm_ws_mb": 4018,
+   "prompt_tokens": 514,
+   "dec_tokens": 31,
+   "ttft_s": 200.72,
+   "peak_rss_gb": 6.31,
+   "moe_ms_tok": 399.04,
+   "attn_ms_tok": 58.12,
+   "head_ms_tok": 7.11,
+   "router_ms_tok": 1.61,
+   "total_ms_tok": 464.27,
+   "step_ms_tok": 466.5,
+   "engine_tok_s": 0.15,
+   "gen_s": 215.2,
+   "gen_tokens": 32,
+   "hit_rate_pct": 84.5,
+   "hits": 176903,
+   "misses": 32377,
+   "fetch_ms_tok": 342.44,
+   "compute_ms_tok": 54.2,
+   "prefill_tokens": 514,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 10024,
+   "prefill_moe_ms": 189366,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 125,
+   "prefill_head_ms": 1051,
+   "waves_blocks": 816,
+   "waves_waves": 1841,
+   "waves_experts": 46899,
+   "waves_resident": 16841,
+   "waves_pairs": 197376,
+   "waves_hold_s": 172.0,
+   "waves_compute_s": 17.1,
+   "text": "### Bugs and Issues in the Code\n\n#### 1. **Missing Imports**\nThe function uses `sys`, `subprocess`, `os`, and `temp",
+   "decode_tok_s": 2.140883977900554,
+   "logits_sha256": "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53",
+   "ok": true,
+   "fetch_share": 0.7340621650589496,
+   "expert_read_gb": 86.504370176,
+   "disk_read_gb": 86.6446336,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_long_cap12_pilot0_rep1",
+   "arm": "c32",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "long",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.v3 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/chunk/prompts/rendered/long.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_Q36_PREFILL_WAVES": "1",
+    "COLI_Q36_PREFILL_WAVES_CHUNK": "32",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "562a03d63564ca6b6c9ca0013197ca506685a82568cca703a7db7d32daf8bfd7",
+   "exit_code": 0,
+   "wall_s": 300.48324562000926,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.932342529296875,
+   "ru_inblock_bytes": 121229811712,
+   "ru_utime_s": 691.375931,
+   "ru_stime_s": 245.896148,
+   "ru_minflt": 3279690,
+   "ru_majflt": 2,
+   "proc_read_bytes": 121229680640,
+   "proc_rchar": 127665880633,
+   "disk_read_bytes": 121325285376,
+   "gpu_mem_idle_mib": 252,
+   "gpu_mem_peak_mib": 252,
+   "expert_bytes": 2654208,
+   "log": "c32/raw/cold_long_cap12_pilot0_rep1.log",
+   "canary_ms_p50": 11.723413990694098,
+   "canary_ms_mean": 33.91992999968352,
+   "host_free_mb": 1364,
+   "host_vm_ws_mb": 6600,
+   "prompt_tokens": 514,
+   "dec_tokens": 31,
+   "ttft_s": 209.11,
+   "peak_rss_gb": 3.93,
+   "moe_ms_tok": 1066.91,
+   "attn_ms_tok": 72.79,
+   "head_ms_tok": 8.1,
+   "router_ms_tok": 2.26,
+   "total_ms_tok": 1147.79,
+   "step_ms_tok": 1155.9,
+   "engine_tok_s": 0.13,
+   "gen_s": 245.1,
+   "gen_tokens": 32,
+   "hit_rate_pct": 77.6,
+   "hits": 162345,
+   "misses": 46935,
+   "fetch_ms_tok": 1002.37,
+   "compute_ms_tok": 61.45,
+   "prefill_tokens": 514,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 9021,
+   "prefill_moe_ms": 199521,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 112,
+   "prefill_head_ms": 281,
+   "waves_blocks": 816,
+   "waves_waves": 4270,
+   "waves_experts": 46899,
+   "waves_resident": 6388,
+   "waves_pairs": 197376,
+   "waves_hold_s": 184.0,
+   "waves_compute_s": 15.2,
+   "text": "### Bugs and Issues in the Code\n\n#### 1. **Missing Imports**\nThe function uses `sys`, `subprocess`, `os`, and `temp",
+   "decode_tok_s": 0.8613503751041961,
+   "logits_sha256": "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53",
+   "ok": true,
+   "fetch_share": 0.8671770914438964,
+   "expert_read_gb": 121.22968064,
+   "disk_read_gb": 121.325285376,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_long_cap32_pilot0_rep2",
+   "arm": "c32",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "long",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.v3 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/chunk/prompts/rendered/long.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_Q36_PREFILL_WAVES": "1",
+    "COLI_Q36_PREFILL_WAVES_CHUNK": "32",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "562a03d63564ca6b6c9ca0013197ca506685a82568cca703a7db7d32daf8bfd7",
+   "exit_code": 0,
+   "wall_s": 429.4158418060106,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.307895660400391,
+   "ru_inblock_bytes": 86102929408,
+   "ru_utime_s": 889.897283,
+   "ru_stime_s": 355.360973,
+   "ru_minflt": 3814955,
+   "ru_majflt": 2,
+   "proc_read_bytes": 86102929408,
+   "proc_rchar": 89025920569,
+   "disk_read_bytes": 86175879168,
+   "gpu_mem_idle_mib": 252,
+   "gpu_mem_peak_mib": 252,
+   "expert_bytes": 2654208,
+   "log": "c32/raw/cold_long_cap32_pilot0_rep2.log",
+   "canary_ms_p50": 15.144780991249718,
+   "canary_ms_mean": 26.75570281189721,
+   "host_free_mb": 1446,
+   "host_vm_ws_mb": 6535,
+   "prompt_tokens": 514,
+   "dec_tokens": 31,
+   "ttft_s": 277.42,
+   "peak_rss_gb": 6.31,
+   "moe_ms_tok": 988.63,
+   "attn_ms_tok": 69.67,
+   "head_ms_tok": 7.14,
+   "router_ms_tok": 1.98,
+   "total_ms_tok": 1065.44,
+   "step_ms_tok": 1068.3,
+   "engine_tok_s": 0.1,
+   "gen_s": 310.6,
+   "gen_tokens": 32,
+   "hit_rate_pct": 84.5,
+   "hits": 176903,
+   "misses": 32377,
+   "fetch_ms_tok": 840.01,
+   "compute_ms_tok": 145.81,
+   "prefill_tokens": 514,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 13126,
+   "prefill_moe_ms": 262664,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 159,
+   "prefill_head_ms": 700,
+   "waves_blocks": 816,
+   "waves_waves": 1841,
+   "waves_experts": 46899,
+   "waves_resident": 16841,
+   "waves_pairs": 197376,
+   "waves_hold_s": 249.0,
+   "waves_compute_s": 13.4,
+   "text": "### Bugs and Issues in the Code\n\n#### 1. **Missing Imports**\nThe function uses `sys`, `subprocess`, `os`, and `temp",
+   "decode_tok_s": 0.9342977697408075,
+   "logits_sha256": "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53",
+   "ok": true,
+   "fetch_share": 0.7863053449405598,
+   "expert_read_gb": 86.102929408,
+   "disk_read_gb": 86.175879168,
+   "gpu_mem_delta_mib": 0
+  },
+  {
+   "run_id": "cold_long_cap12_pilot0_rep2",
+   "arm": "c32",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "long",
+   "cap": 12,
+   "pilot": 0,
+   "rep": 2,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.v3 12 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/chunk/prompts/rendered/long.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_Q36_MISS_QD": "8",
+    "COLI_Q36_PREFILL_WAVES": "1",
+    "COLI_Q36_PREFILL_WAVES_CHUNK": "32",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "562a03d63564ca6b6c9ca0013197ca506685a82568cca703a7db7d32daf8bfd7",
+   "exit_code": 0,
+   "wall_s": 323.70595663398854,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 3.932403564453125,
+   "ru_inblock_bytes": 120751038464,
+   "ru_utime_s": 958.137717,
+   "ru_stime_s": 348.841763,
+   "ru_minflt": 3234951,
+   "ru_majflt": 3,
+   "proc_read_bytes": 120689803264,
+   "proc_rchar": 127583305273,
+   "disk_read_bytes": 120898097152,
+   "gpu_mem_idle_mib": 252,
+   "gpu_mem_peak_mib": 252,
+   "expert_bytes": 2654208,
+   "log": "c32/raw/cold_long_cap12_pilot0_rep2.log",
+   "canary_ms_p50": 8.54815098864492,
+   "canary_ms_mean": 13.80830993730342,
+   "host_free_mb": 3643,
+   "host_vm_ws_mb": 4857,
+   "prompt_tokens": 514,
+   "dec_tokens": 31,
+   "ttft_s": 231.95,
+   "peak_rss_gb": 3.93,
+   "moe_ms_tok": 1866.16,
+   "attn_ms_tok": 112.6,
+   "head_ms_tok": 12.27,
+   "router_ms_tok": 2.4,
+   "total_ms_tok": 1991.03,
+   "step_ms_tok": 1993.7,
+   "engine_tok_s": 0.11,
+   "gen_s": 293.8,
+   "gen_tokens": 32,
+   "hit_rate_pct": 77.6,
+   "hits": 162345,
+   "misses": 46935,
+   "fetch_ms_tok": 1660.35,
+   "compute_ms_tok": 202.51,
+   "prefill_tokens": 514,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 11744,
+   "prefill_moe_ms": 218271,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 130,
+   "prefill_head_ms": 1655,
+   "waves_blocks": 816,
+   "waves_waves": 4270,
+   "waves_experts": 46899,
+   "waves_resident": 6388,
+   "waves_pairs": 197376,
+   "waves_hold_s": 202.0,
+   "waves_compute_s": 16.1,
+   "text": "### Bugs and Issues in the Code\n\n#### 1. **Missing Imports**\nThe function uses `sys`, `subprocess`, `os`, and `temp",
+   "decode_tok_s": 0.5012126111560224,
+   "logits_sha256": "96ecac2972dd6509b26803849860154dacc17f81f711183a8649a02a5bc76e53",
+   "ok": true,
+   "fetch_share": 0.8327983146912774,
+   "expert_read_gb": 120.689803264,
+   "disk_read_gb": 120.898097152,
+   "gpu_mem_delta_mib": 0
+  }
+ ]
+}

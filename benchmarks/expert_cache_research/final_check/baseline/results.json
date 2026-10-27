@@ -1,0 +1,387 @@
+{
+ "invocations": [
+  {
+   "argv": [
+    "run_bench.py",
+    "--snap",
+    "/home/mostafa/colibri-models/qwen3-coder-30b",
+    "--arm",
+    "baseline=bin/qwen36.baseline",
+    "--arm",
+    "v5flagoff=bin/qwen36.v5",
+    "--arm",
+    "v5waves=bin/qwen36.v5:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1",
+    "--modes",
+    "cold",
+    "--caps",
+    "32",
+    "--pilot",
+    "0",
+    "--prompts",
+    "short",
+    "--reps",
+    "1",
+    "--n-new",
+    "32",
+    "--out",
+    "final_check"
+   ],
+   "arm": {
+    "name": "baseline",
+    "binary": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.baseline",
+    "env": {},
+    "sha256": "36ff0d1fe1a58e1387eea07ea06a8ba510f8ddfcd160b406a6600d0ae75da37f"
+   },
+   "snap": "/home/mostafa/colibri-models/qwen3-coder-30b",
+   "device": "sdd",
+   "expert_bytes": 2654208,
+   "common_env": {
+    "COLI_TIMERS": "1",
+    "COLI_LOOKUP": "0",
+    "COLI_KV_PREFIX": "0",
+    "OMP_PROC_BIND": "close",
+    "OMP_PLACES": "cores"
+   },
+   "started": "2026-10-27T16:53:02"
+  }
+ ],
+ "cells": {
+  "cold|cold-process|short|cap32|pilot0": {
+   "runs": 1,
+   "excluded_failed": 0,
+   "metrics": {
+    "ttft_s": {
+     "n": 1,
+     "mean": 80.57,
+     "stdev": 0.0,
+     "min": 80.57,
+     "max": 80.57,
+     "values": [
+      80.57
+     ]
+    },
+    "engine_tok_s": {
+     "n": 1,
+     "mean": 0.28,
+     "stdev": 0.0,
+     "min": 0.28,
+     "max": 0.28,
+     "values": [
+      0.28
+     ]
+    },
+    "decode_tok_s": {
+     "n": 1,
+     "mean": 0.9385407205570693,
+     "stdev": 0.0,
+     "min": 0.9385407205570693,
+     "max": 0.9385407205570693,
+     "values": [
+      0.9385407205570693
+     ]
+    },
+    "wall_s": {
+     "n": 1,
+     "mean": 153.73542008000368,
+     "stdev": 0.0,
+     "min": 153.73542008000368,
+     "max": 153.73542008000368,
+     "values": [
+      153.73542008000368
+     ]
+    },
+    "hit_rate_pct": {
+     "n": 1,
+     "mean": 68.6,
+     "stdev": 0.0,
+     "min": 68.6,
+     "max": 68.6,
+     "values": [
+      68.6
+     ]
+    },
+    "hits": {
+     "n": 1,
+     "mean": 14491.0,
+     "stdev": 0.0,
+     "min": 14491,
+     "max": 14491,
+     "values": [
+      14491
+     ]
+    },
+    "misses": {
+     "n": 1,
+     "mean": 6629.0,
+     "stdev": 0.0,
+     "min": 6629,
+     "max": 6629,
+     "values": [
+      6629
+     ]
+    },
+    "fetch_ms_tok": {
+     "n": 1,
+     "mean": 975.53,
+     "stdev": 0.0,
+     "min": 975.53,
+     "max": 975.53,
+     "values": [
+      975.53
+     ]
+    },
+    "compute_ms_tok": {
+     "n": 1,
+     "mean": 35.11,
+     "stdev": 0.0,
+     "min": 35.11,
+     "max": 35.11,
+     "values": [
+      35.11
+     ]
+    },
+    "step_ms_tok": {
+     "n": 1,
+     "mean": 1064.9,
+     "stdev": 0.0,
+     "min": 1064.9,
+     "max": 1064.9,
+     "values": [
+      1064.9
+     ]
+    },
+    "moe_ms_tok": {
+     "n": 1,
+     "mean": 1012.92,
+     "stdev": 0.0,
+     "min": 1012.92,
+     "max": 1012.92,
+     "values": [
+      1012.92
+     ]
+    },
+    "attn_ms_tok": {
+     "n": 1,
+     "mean": 43.02,
+     "stdev": 0.0,
+     "min": 43.02,
+     "max": 43.02,
+     "values": [
+      43.02
+     ]
+    },
+    "router_ms_tok": {
+     "n": 1,
+     "mean": 1.52,
+     "stdev": 0.0,
+     "min": 1.52,
+     "max": 1.52,
+     "values": [
+      1.52
+     ]
+    },
+    "fetch_share": {
+     "n": 1,
+     "mean": 0.9160766269133251,
+     "stdev": 0.0,
+     "min": 0.9160766269133251,
+     "max": 0.9160766269133251,
+     "values": [
+      0.9160766269133251
+     ]
+    },
+    "expert_read_gb": {
+     "n": 1,
+     "mean": 21.00850688,
+     "stdev": 0.0,
+     "min": 21.00850688,
+     "max": 21.00850688,
+     "values": [
+      21.00850688
+     ]
+    },
+    "disk_read_gb": {
+     "n": 1,
+     "mean": 21.035470848,
+     "stdev": 0.0,
+     "min": 21.035470848,
+     "max": 21.035470848,
+     "values": [
+      21.035470848
+     ]
+    },
+    "peak_rss_gb": {
+     "n": 1,
+     "mean": 6.18,
+     "stdev": 0.0,
+     "min": 6.18,
+     "max": 6.18,
+     "values": [
+      6.18
+     ]
+    },
+    "ru_maxrss_gb": {
+     "n": 1,
+     "mean": 6.1786041259765625,
+     "stdev": 0.0,
+     "min": 6.1786041259765625,
+     "max": 6.1786041259765625,
+     "values": [
+      6.1786041259765625
+     ]
+    },
+    "gpu_mem_peak_mib": {
+     "n": 1,
+     "mean": 252.0,
+     "stdev": 0.0,
+     "min": 252,
+     "max": 252,
+     "values": [
+      252
+     ]
+    },
+    "gpu_mem_delta_mib": {
+     "n": 1,
+     "mean": 0.0,
+     "stdev": 0.0,
+     "min": 0,
+     "max": 0,
+     "values": [
+      0
+     ]
+    },
+    "prompt_tokens": {
+     "n": 1,
+     "mean": 24.0,
+     "stdev": 0.0,
+     "min": 24,
+     "max": 24,
+     "values": [
+      24
+     ]
+    },
+    "gen_tokens": {
+     "n": 1,
+     "mean": 32.0,
+     "stdev": 0.0,
+     "min": 32,
+     "max": 32,
+     "values": [
+      32
+     ]
+    },
+    "prefill_moe_ms": {
+     "n": 1,
+     "mean": 78218.0,
+     "stdev": 0.0,
+     "min": 78218,
+     "max": 78218,
+     "values": [
+      78218
+     ]
+    },
+    "ru_minflt": {
+     "n": 1,
+     "mean": 3020554.0,
+     "stdev": 0.0,
+     "min": 3020554,
+     "max": 3020554,
+     "values": [
+      3020554
+     ]
+    },
+    "ru_majflt": {
+     "n": 1,
+     "mean": 1.0,
+     "stdev": 0.0,
+     "min": 1,
+     "max": 1,
+     "values": [
+      1
+     ]
+    }
+   },
+   "output_hashes": [
+    "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2"
+   ]
+  }
+ },
+ "raw_runs": [
+  {
+   "run_id": "cold_short_cap32_pilot0_rep1",
+   "arm": "baseline",
+   "mode": "cold",
+   "kind": "cold-process",
+   "prompt": "short",
+   "cap": 32,
+   "pilot": 0,
+   "rep": 1,
+   "cmd": "/home/mostafa/projects/colibri/benchmarks/expert_cache_research/bin/qwen36.baseline 32 4 /home/mostafa/projects/colibri/benchmarks/expert_cache_research/final_check/prompts/rendered/short.txt",
+   "env": {
+    "COLI_KV_PREFIX": "0",
+    "COLI_LOOKUP": "0",
+    "COLI_TIMERS": "1",
+    "N_NEW": "32",
+    "OMP_NUM_THREADS": "16",
+    "OMP_PLACES": "cores",
+    "OMP_PROC_BIND": "close",
+    "PILOT": "0",
+    "SNAP": "/home/mostafa/colibri-models/qwen3-coder-30b"
+   },
+   "binary_sha256": "36ff0d1fe1a58e1387eea07ea06a8ba510f8ddfcd160b406a6600d0ae75da37f",
+   "exit_code": 0,
+   "wall_s": 153.73542008000368,
+   "pagecache_resident_before_bytes": 0,
+   "ru_maxrss_gb": 6.1786041259765625,
+   "ru_inblock_bytes": 21008510976,
+   "ru_utime_s": 588.189412,
+   "ru_stime_s": 118.714039,
+   "ru_minflt": 3020554,
+   "ru_majflt": 1,
+   "proc_read_bytes": 21008506880,
+   "proc_rchar": 20685370811,
+   "disk_read_bytes": 21035470848,
+   "gpu_mem_idle_mib": 252,
+   "gpu_mem_peak_mib": 252,
+   "expert_bytes": 2654208,
+   "log": "baseline/raw/cold_short_cap32_pilot0_rep1.log",
+   "canary_ms_p50": 14.76810900203418,
+   "canary_ms_mean": 26.652082622604212,
+   "host_free_mb": 1909,
+   "host_vm_ws_mb": 4639,
+   "prompt_tokens": 24,
+   "dec_tokens": 31,
+   "ttft_s": 80.57,
+   "peak_rss_gb": 6.18,
+   "moe_ms_tok": 1012.92,
+   "attn_ms_tok": 43.02,
+   "head_ms_tok": 7.09,
+   "router_ms_tok": 1.52,
+   "total_ms_tok": 1063.04,
+   "step_ms_tok": 1064.9,
+   "engine_tok_s": 0.28,
+   "gen_s": 113.6,
+   "gen_tokens": 32,
+   "hit_rate_pct": 68.6,
+   "hits": 14491,
+   "misses": 6629,
+   "fetch_ms_tok": 975.53,
+   "compute_ms_tok": 35.11,
+   "prefill_tokens": 24,
+   "prefill_dn_ms": 0,
+   "prefill_attn_ms": 855,
+   "prefill_moe_ms": 78218,
+   "prefill_shared_ms": 0,
+   "prefill_router_ms": 18,
+   "prefill_head_ms": 1473,
+   "text": "Here's a Python function that checks whether a string is a valid IPv4 address:\n\n```python\ndef is_valid_ipv4(ip_string):\n    \"\"\"\n    Check",
+   "decode_tok_s": 0.9385407205570693,
+   "logits_sha256": "0306e8f2207cbc0a2e3bb58a7d37e060dd1a7a44dccd067f9f41eff4da9833b2",
+   "ok": true,
+   "fetch_share": 0.9160766269133251,
+   "expert_read_gb": 21.00850688,
+   "disk_read_gb": 21.035470848,
+   "gpu_mem_delta_mib": 0
+  }
+ ]
+}

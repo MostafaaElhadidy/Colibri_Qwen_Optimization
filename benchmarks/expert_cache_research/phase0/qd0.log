@@ -1,0 +1,69 @@
+== qwen36 Phase-2 engine | cache=32/layer bits=4 ctx=8192 pilot=0 wide=1 hot=0 smooth=0.30 conf=0.92 ==
+[tok] loaded 151643 pieces (max id 151668) from /home/mostafa/colibri-models/qwen3-coder-30b/tokenizer.json
+[enc] prompt tokens: 24 | generating 32 new tokens
+[meta] loaded: q_heads=32 kv_heads=4 head_dim=128 q_head_dim=128 k_head_dim=128 v_head_dim=128 o_in=4096 rotary_dim=128 n_experts=128 topk=8 inter=768 shared_inter=0 n_group=1 topk_group=1 attn_output_gate=0 n_active=48
+[dense-i8] 241 matrices quantized during load, 4.6 GB f32 freed
+[qwen36] group-scaled experts: gs=64
+resident weights loaded in 34.9s | RSS after load: 2.96 GB
+[qwen36] expert format on disk: int4 packed (tier fmt=4)
+Generated (32 new tokens):
+Text : [faultprof] phase load     minflt   2025231 majflt       0  (0.0 s)
+[qwen36] expert kernel: planar int4 in RAM (expert_ffn.h), QWEN_EXPERT_KERNEL=0 restores int8 unpack
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[faultprof] phase prefill  minflt    995289 majflt       0  (52.2 s)
+Here's a Python function that checks whether a string is a valid IPv4 address:
+
+```python
+def is_valid_ipv4(ip_string):
+    """
+    Check[dump] wrote 151936 logits -> /home/mostafa/.claude/jobs/b51844a5/tmp/p0/qd0.f32
+
+TTFT: 52.21 s (time to first token)
+[timers] decode: 31 tokens  (shared/router are subsets of moe_total)
+[timers]   deltanet         0.0 ms      0.00 ms/token
+[timers]   attention     1146.9 ms     37.00 ms/token
+[timers]   moe_total    39924.4 ms   1287.88 ms/token
+[timers]   (shared)         0.0 ms      0.00 ms/token
+[timers]   (router)        32.0 ms      1.03 ms/token
+[timers]   lm_head        218.6 ms      7.05 ms/token
+[timers]   TOTAL        41289.9 ms   1331.93 ms/token
+[timers]   step() total: 1333.0 ms/token (outside the phases: 1.1)
+[timers]   expert kernel: fetch 1210.45 | compute 75.59 ms/token
+[timers] prefill: 24 tokens  dn=0 attn=871 moe=50492(sh=0 rt=20) head=829 ms
+[faultprof] phase decode   minflt         0 majflt       0  (41.4 s)
+[faultprof] per call: step          calls     us/call  minflt/call  majflt/call
+[faultprof]   slot pick          6629        6.8          0.2         0.00
+[faultprof]   read buffer        6629       16.9          0.2         0.00
+[faultprof]   weight pread       6629     8916.7        133.2         0.00
+[faultprof]   int4 repack        5093     2988.7          0.0         0.00
+[faultprof]   scale pread        5093     2023.0          0.0         0.00
+[faultprof]   repack, 1st        1536      280.6          0.0         0.00
+[faultprof]   scale rd, 1st      1536     1247.3         71.0         0.00
+[faultprof]   publish            6629        1.2          0.0         0.00
+
+PEAK RSS: 6.18 GB
+Expert cache hit rate: 68.6% (hit=14491 miss=6629)
+Speed: 0.34 tok/s (93.6s for 32 tokens)
+	Command being timed: "/home/mostafa/projects/colibri/c/qwen36 32 4 prompts/rendered/short.txt"
+	User time (seconds): 628.08
+	System time (seconds): 89.73
+	Percent of CPU this job got: 553%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:09.76
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 6478640
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 3020521
+	Voluntary context switches: 31418
+	Involuntary context switches: 995
+	Swaps: 0
+	File system inputs: 41037464
+	File system outputs: 1224
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -73,6 +73,8 @@ RE = {
     "step_ms_tok": re.compile(r"step\(\) total: ([\d.]+) ms/token"),
     "xf": re.compile(r"expert kernel: fetch ([\d.]+) \| compute ([\d.]+) ms/token"),
     "prefill": re.compile(r"\[timers\] prefill: (\d+) tokens\s+dn=(\d+) attn=(\d+) moe=(\d+)\(sh=(\d+) rt=(\d+)\) head=(\d+) ms"),
+    "waves": re.compile(r"\[waves\] (\d+) layer blocks, (\d+) waves, (\d+) experts \((\d+) resident at plan\), (\d+) pairs(?: \| hold ([\d.]+) s, compute ([\d.]+) s)?"),
+    "prefill_cache": re.compile(r"\[timers\] prefill cache: hit=(\d+) miss=(\d+)"),
     "text": re.compile(r"Text : (.*?)\n(?:TTFT:|\[timers\]|\nPEAK RSS)", re.S),
 }
 
@@ -219,7 +221,20 @@ def parse_cli_log(text):
         keys = ("prefill_tokens", "prefill_dn_ms", "prefill_attn_ms", "prefill_moe_ms",
                 "prefill_shared_ms", "prefill_router_ms", "prefill_head_ms")
         r.update({k: int(v) for k, v in zip(keys, m.groups())})
-    m = RE["text"].search(text)
+    m = RE["waves"].search(text)
+    if m:
+        keys = ("waves_blocks", "waves_waves", "waves_experts", "waves_resident", "waves_pairs")
+        r.update({k: int(v) for k, v in zip(keys, m.groups()[:5])})
+        if m.group(6):
+            r["waves_hold_s"], r["waves_compute_s"] = float(m.group(6)), float(m.group(7))
+    m = RE["prefill_cache"].search(text)
+    if m:
+        r["prefill_hits"], r["prefill_misses"] = int(m.group(1)), int(m.group(2))
+        if r.get("misses") is not None:
+            r["decode_misses"] = r["misses"] - r["prefill_misses"]
+    # the "[timers] prefill cache:" line (qwen36.v4+) prints between "Text :" and the
+    # streamed text; it must not end the capture
+    m = RE["text"].search(re.sub(r"\[timers\] prefill cache:[^\n]*\n", "", text))
     r["text"] = clean_text(m.group(1)) if m else None
     # decode-only throughput: tokens after the first over the time after TTFT
     if r["ttft_s"] is not None and r["gen_s"] and r["gen_tokens"] and r["gen_s"] > r["ttft_s"]:
@@ -260,6 +275,24 @@ def storage_canary(snap, n=16):
     return {"canary_ms_p50": r["lat_ms_p50"], "canary_ms_mean": r["lat_ms_mean"]}
 
 
+def host_memory():
+    """Host-side canary (WSL only): the Windows host's free RAM and the VM's host
+    working set, read just before a run. The VM can be paged out by the host when the
+    host runs short, and touching a paged-out guest page is a host fault the guest never
+    sees (docs/expert_cache_research_2.md, Phase 0). None outside WSL or on any error."""
+    ps = "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe"
+    if not os.path.exists(ps):
+        return {}
+    cmd = ("$v=Get-Process vmmemWSL -ErrorAction SilentlyContinue; $o=Get-CimInstance Win32_OperatingSystem; "
+           "'{0} {1}' -f [int]($o.FreePhysicalMemory/1KB),[int]($v.WorkingSet64/1MB)")
+    try:
+        out = subprocess.run([ps, "-NoProfile", "-Command", cmd], capture_output=True, text=True,
+                             timeout=30).stdout.split()
+        return {"host_free_mb": int(out[0]), "host_vm_ws_mb": int(out[1])}
+    except Exception:
+        return {}
+
+
 # ---------------------------------------------------------------- one cold run
 def run_cold(arm, snap, prompt_name, prompt_path, cap, pilot, rep, args, out_dir, ebytes, dev):
     run_id = f"cold_{prompt_name}_cap{cap}_pilot{pilot}_rep{rep}"
@@ -272,6 +305,7 @@ def run_cold(arm, snap, prompt_name, prompt_path, cap, pilot, rep, args, out_dir
     cmd = [arm["binary"], str(cap), "4", str(prompt_path)]
 
     canary = storage_canary(snap)
+    canary.update(host_memory())
     files = evict_cache.evict(snap)
     resident = evict_cache.resident_bytes(files)
     sect0 = disk_sectors_read(dev)
@@ -297,6 +331,7 @@ def run_cold(arm, snap, prompt_name, prompt_path, cap, pilot, rep, args, out_dir
         "pagecache_resident_before_bytes": resident,
         "ru_maxrss_gb": ru.ru_maxrss / 1048576, "ru_inblock_bytes": ru.ru_inblock * 512,
         "ru_utime_s": ru.ru_utime, "ru_stime_s": ru.ru_stime,
+        "ru_minflt": ru.ru_minflt, "ru_majflt": ru.ru_majflt,
         "proc_read_bytes": poller.last.get("read_bytes"), "proc_rchar": poller.last.get("rchar"),
         "disk_read_bytes": (sect1 - sect0) * 512 if sect0 is not None and sect1 is not None else None,
         "gpu_mem_idle_mib": gpu.idle, "gpu_mem_peak_mib": gpu.peak,

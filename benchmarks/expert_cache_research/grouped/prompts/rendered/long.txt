@@ -1,0 +1,49 @@
+<|im_start|>user
+Review the following Python function. List any bugs, explain each one, and give a corrected version with type hints and a docstring.
+
+```python
+def evict_cache(ram_gb, snap_dir=None):
+    """Evict resident page cache pages without privileges.
+
+    macOS `purge` needs root; Linux uses posix_fadvise(DONTNEED) over the
+    model's safetensors shards to drop cached pages instantly with 0 disk writes.
+    The fallback writes a temp file larger than RAM when no direct method exists.
+    Returns True if an eviction was actually attempted.
+    """
+    if sys.platform == "darwin":
+        r = subprocess.run(["purge"], capture_output=True)
+        if r.returncode == 0:
+            return True
+
+    # Zero-write Linux eviction using posix_fadvise over model shards
+    if sys.platform.startswith("linux") and snap_dir and os.path.isdir(snap_dir):
+        try:
+            evicted_any = False
+            for name in os.listdir(snap_dir):
+                if name.endswith(".safetensors"):
+                    p = os.path.join(snap_dir, name)
+                    try:
+                        fd = os.open(p, os.O_RDONLY)
+                        try:
+                            os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_DONTNEED)
+                            evicted_any = True
+                        finally:
+                            os.close(fd)
+                    except OSError:
+                        pass
+            if evicted_any:
+                return True
+        except OSError as e:
+            print(f"[datapoint] Linux fadvise eviction skipped: {e}", file=sys.stderr)
+
+    # Fallback: Write temp file larger than RAM
+    size_mb = int(ram_gb) * 1024 + 1024
+    # Confirm the temp volume can hold it before writing a byte. This is the only
+    # eviction route on Windows (macOS has purge, Linux has fadvise), and since
+    # #1042 it writes the machine's real RAM rather than a hardcoded 8 GB, so the
+    # write is now as large as the box. tempfile.gettempdir() is usually the
+    # system drive while the model lives elsewhere, so on a 128 GB machine with
+    # 124 GB free on C: this fills the system volume to zero and only then raises.
+    tmp_dir = tempfile.gettempdir()
+```<|im_end|>
+<|im_start|>assistant

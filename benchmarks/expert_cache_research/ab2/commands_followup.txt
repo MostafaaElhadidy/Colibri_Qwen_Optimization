@@ -1,0 +1,20 @@
+# run from benchmarks/expert_cache_research/ after the main matrix (commands.txt); binary bin/qwen36.v3 =
+# bin/qwen36.v2 + COLI_Q36_PREFILL_GROUPED (off unless set) + the [waves] hold/compute timers
+S=~/colibri-models/qwen3-coder-30b
+# 1. correctness: frozen original, the final binary with no flag, the final binary with waves
+python3 run_bench.py --snap $S --arm baseline=bin/qwen36.baseline --arm flagoff=bin/qwen36.v3 \
+  --arm v3waves=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 \
+  --modes cold --caps 32,12 --pilot 0 --prompts short,medium,long --reps 1 --n-new 32 --out ab2
+# 2. planning-block (prefill chunk) size, 514-token prompt
+python3 run_bench.py --snap $S \
+  --arm c32=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=32 \
+  --arm c64=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=64 \
+  --arm c128=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=128 \
+  --arm c256=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_WAVES_CHUNK=256 \
+  --arm call=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 \
+  --modes cold --caps 32,12 --pilot 0 --prompts long --reps 2 --n-new 32 --out chunk
+# 3. grouped kernel vs waves alone
+python3 run_bench.py --snap $S \
+  --arm gwaves=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1 \
+  --arm grouped=bin/qwen36.v3:COLI_Q36_MISS_QD=8,COLI_Q36_PREFILL_WAVES=1,COLI_Q36_PREFILL_GROUPED=1 \
+  --modes cold --caps 32,12 --pilot 0 --prompts medium,long --reps 3 --n-new 32 --out grouped

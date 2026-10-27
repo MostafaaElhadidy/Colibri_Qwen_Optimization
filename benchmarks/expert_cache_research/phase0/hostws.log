@@ -1,0 +1,49 @@
+== qwen36 Phase-2 engine | cache=32/layer bits=4 ctx=8192 pilot=0 wide=1 hot=0 smooth=0.30 conf=0.92 ==
+[tok] loaded 151643 pieces (max id 151668) from /home/mostafa/colibri-models/qwen3-coder-30b/tokenizer.json
+[enc] prompt tokens: 24 | generating 32 new tokens
+[meta] loaded: q_heads=32 kv_heads=4 head_dim=128 q_head_dim=128 k_head_dim=128 v_head_dim=128 o_in=4096 rotary_dim=128 n_experts=128 topk=8 inter=768 shared_inter=0 n_group=1 topk_group=1 attn_output_gate=0 n_active=48
+[dense-i8] 241 matrices quantized during load, 4.6 GB f32 freed
+[qwen36] group-scaled experts: gs=64
+resident weights loaded in 19.4s | RSS after load: 2.96 GB
+[qwen36] expert format on disk: int4 packed (tier fmt=4)
+Generated (32 new tokens):
+Text : [faultprof] phase load     minflt   2025287 majflt       0  (0.0 s)
+[qwen36] expert kernel: planar int4 in RAM (expert_ffn.h), QWEN_EXPERT_KERNEL=0 restores int8 unpack
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[qwen36] int4 packed weights detected — kept int4, repacked planar for expert_ffn.h
+[faultprof] phase prefill  minflt   1016940 majflt       0  (28.3 s)
+Here's a Python function that checks whether a string is a valid IPv4 address:
+
+```python
+def is_valid_ipv4(ip_string):
+    """
+    Check
+TTFT: 28.34 s (time to first token)
+[timers] decode: 31 tokens  (shared/router are subsets of moe_total)
+[timers]   deltanet         0.0 ms      0.00 ms/token
+[timers]   attention     2735.3 ms     88.24 ms/token
+[timers]   moe_total    27158.9 ms    876.09 ms/token
+[timers]   (shared)         0.0 ms      0.00 ms/token
+[timers]   (router)        69.1 ms      2.23 ms/token
+[timers]   lm_head        726.4 ms     23.43 ms/token
+[timers]   TOTAL        30620.6 ms    987.76 ms/token
+[timers]   step() total: 989.4 ms/token (outside the phases: 1.6)
+[timers]   expert kernel: fetch 732.68 | compute 140.23 ms/token
+[timers] prefill: 24 tokens  dn=0 attn=1046 moe=26390(sh=0 rt=19) head=842 ms
+[faultprof] phase decode   minflt      6841 majflt       0  (30.7 s)
+[faultprof] per call: step          calls     us/call  minflt/call  majflt/call
+[faultprof]   slot pick          6629       70.4          0.5         0.00
+[faultprof]   read buffer        6629        5.9          0.0         0.00
+[faultprof]   weight pread       6629    11315.7          0.7         0.00
+[faultprof]   int4 repack        5093     3921.8          0.0         0.00
+[faultprof]   scale pread        5093     1748.6          0.0         0.00
+[faultprof]   repack, 1st        1536     3079.5        562.9         0.00
+[faultprof]   scale rd, 1st      1536     6298.9         71.0         0.00
+[faultprof]   publish            6629        2.0          0.0         0.00
+
+PEAK RSS: 6.20 GB
+Expert cache hit rate: 68.6% (hit=14491 miss=6629)
+Speed: 0.54 tok/s (59.0s for 32 tokens)
