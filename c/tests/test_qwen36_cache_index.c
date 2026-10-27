@@ -195,7 +195,7 @@ static void wv_free(Model *m) {
     for (int l = 0; m->ehit && l < m->c.n_layers; l++) free(m->ehit[l]);
     free(m->ehit); free(m->is_pinned); free_cache(m);
 }
-static void check_waves_case(int S, int cap, int chunk, int headroom, int qd, int passes, unsigned seed) {
+static void check_waves_case(int S, int cap, int chunk, int headroom, int qd, int passes, unsigned seed, int grouped) {
     float *x = malloc(sizeof(float) * S * WV_D), *val = malloc(sizeof(float) * S * WV_K);
     int *idx = malloc(sizeof(int) * S * WV_K);
     float *oa = calloc((size_t)S * WV_D, sizeof(float)), *ob = calloc((size_t)S * WV_D, sizeof(float));
@@ -219,7 +219,7 @@ static void check_waves_case(int S, int cap, int chunk, int headroom, int qd, in
         moe_xf_run(&a, 0, x, S, oa, idx, val);
         memset(g_wv_loads, 0, sizeof g_wv_loads);
         int *seen = calloc((size_t)S * WV_K, sizeof(int)); g_test_pair_seen = seen;
-        g_q36_waves = 1; g_q36_waves_chunk = chunk; g_q36_waves_headroom = headroom;
+        g_q36_waves = 1; g_q36_waves_chunk = chunk; g_q36_waves_headroom = headroom; g_q36_grouped = grouped;
         uint64_t h0 = b.hits + b.miss;
         moe_xf_run(&b, 0, x, S, ob, idx, val);
         g_test_pair_seen = NULL;
@@ -240,25 +240,27 @@ static void check_waves_case(int S, int cap, int chunk, int headroom, int qd, in
         free(seen);
         if (failures) break;
     }
-    printf("qwen36 prefill waves%s: S=%d cap=%d chunk=%d headroom=%d qd=%d, %d passes: token path %llu miss, waves %llu miss, identical bits\n",
-           g_q36_waves_last ? " (order=last)" : " (order=first)", S, cap, chunk, headroom, qd, passes, (unsigned long long)a.miss, (unsigned long long)b.miss);
-    g_q36_waves = 0; g_q36_waves_chunk = 0; g_q36_waves_headroom = -1; g_test_load = NULL; g_q36_miss_qd = 0;
+    printf("qwen36 prefill waves%s%s: S=%d cap=%d chunk=%d headroom=%d qd=%d, %d passes: token path %llu miss, waves %llu miss, identical bits\n",
+           grouped ? " (grouped)" : "", g_q36_waves_last ? " (order=last)" : " (order=first)", S, cap, chunk, headroom, qd, passes, (unsigned long long)a.miss, (unsigned long long)b.miss);
+    g_q36_waves = 0; g_q36_waves_chunk = 0; g_q36_waves_headroom = -1; g_test_load = NULL; g_q36_miss_qd = 0; g_q36_grouped = 0;
     wv_free(&a); wv_free(&b); free(x); free(val); free(idx); free(oa); free(ob);
 }
 static void check_waves(void) {
     g_q36_waves_last = 0;                             /* ORDER=first: first-seen order */
-    check_waves_case(37, 10, 0, 0, 0, 6, 11u);    /* serial loads */
-    check_waves_case(37, 10, 0, 1, 0, 6, 12u);    /* one slot of headroom */
-    check_waves_case(37, 10, 5, 0, 0, 6, 13u);    /* planned 5 tokens at a time */
-    check_waves_case(64, 9, 0, 0, 0, 4, 14u);     /* cap just above K */
-    check_waves_case(300, 12, 0, 0, 0, 2, 15u);   /* more pairs than one kernel call takes */
-    check_waves_case(9, 5, 0, 0, 0, 6, 16u);      /* cap < K: the token path runs pair by pair */
-    check_waves_case(37, 10, 0, 0, 4, 6, 17u);    /* misses through expert_hold_batch, qd=4 */
-    check_waves_case(300, 12, 64, 0, 8, 2, 18u);  /* batched, planned 64 tokens at a time */
+    check_waves_case(37, 10, 0, 0, 0, 6, 11u, 0);    /* serial loads */
+    check_waves_case(37, 10, 0, 1, 0, 6, 12u, 0);    /* one slot of headroom */
+    check_waves_case(37, 10, 5, 0, 0, 6, 13u, 0);    /* planned 5 tokens at a time */
+    check_waves_case(64, 9, 0, 0, 0, 4, 14u, 0);     /* cap just above K */
+    check_waves_case(300, 12, 0, 0, 0, 2, 15u, 0);   /* more pairs than one kernel call takes */
+    check_waves_case(9, 5, 0, 0, 0, 6, 16u, 0);      /* cap < K: the token path runs pair by pair */
+    check_waves_case(37, 10, 0, 0, 4, 6, 17u, 0);    /* misses through expert_hold_batch, qd=4 */
+    check_waves_case(300, 12, 64, 0, 8, 2, 18u, 0);  /* batched, planned 64 tokens at a time */
+    check_waves_case(37, 10, 0, 0, 0, 6, 19u, 1);    /* grouped kernel: four pairs per weight pass */
+    check_waves_case(300, 12, 0, 0, 8, 2, 20u, 1);   /* grouped, long expert chains, batched loads */
     g_q36_waves_last = 1;                             /* the default, last use: same bits, last token's experts resident */
-    check_waves_case(37, 10, 0, 0, 0, 6, 21u);
-    check_waves_case(300, 12, 0, 0, 8, 2, 22u);
-    check_waves_case(37, 10, 5, 1, 4, 6, 23u);
+    check_waves_case(37, 10, 0, 0, 0, 6, 21u, 0);
+    check_waves_case(300, 12, 0, 0, 8, 2, 22u, 1);
+    check_waves_case(37, 10, 5, 1, 4, 6, 23u, 0);
 }
 
 int main(void) {

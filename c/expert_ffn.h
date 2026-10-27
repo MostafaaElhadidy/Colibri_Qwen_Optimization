@@ -266,6 +266,39 @@ static inline float xf_dot_i8(const uint8_t *w, const float *sc, const int8_t *x
 #endif
 }
 
+/* Four rows' xf_dot_i8 against one weight row, the weight block loaded and split
+ * into nibbles once for all four (the grouped kernel of a prefill expert, which
+ * runs every token routed to it). Each row's own sequence -- the integer dot per
+ * block, the fma into its lane accumulator, the correction chain, the 8->1 tree --
+ * is xf_dot_i8_avx2's, statement for statement, so out[j] has xf_dot_i8's bits. */
+static inline void xf_dot_i8_x4(const uint8_t *w, const float *sc, const int8_t *const xq[4],
+                                const float *const xsum[4], const float sx[4], int I, float out[4]) {
+#ifdef XF_HAVE_AVX2
+    const __m256i m4 = _mm256_set1_epi8(0x0F), z = _mm256_setzero_si256();
+    __m256 acc0 = _mm256_setzero_ps(), acc1 = acc0, acc2 = acc0, acc3 = acc0;
+    int ng = I / XF_BLOCK, g = 0;
+    for (; g < ng; g++) {
+        __m256i bb = _mm256_loadu_si256((const __m256i *)(w + (size_t)g * XF_BLOCK_BYTES));
+        __m256i lo = _mm256_and_si256(bb, m4), hi = _mm256_and_si256(_mm256_srli_epi16(bb, 4), m4);
+        __m256 scg = _mm256_set1_ps(sc[g]);
+#define XF_X4_ROW(j, acc) do { const int8_t *xb = xq[j] + g * XF_BLOCK; \
+        __m256i d = xf_dpbusd(z, lo, _mm256_loadu_si256((const __m256i *)xb)); \
+        d = xf_dpbusd(d, hi, _mm256_loadu_si256((const __m256i *)(xb + 32))); \
+        acc = _mm256_fmadd_ps(_mm256_cvtepi32_ps(d), scg, acc); } while (0)
+        XF_X4_ROW(0, acc0); XF_X4_ROW(1, acc1); XF_X4_ROW(2, acc2); XF_X4_ROW(3, acc3);
+#undef XF_X4_ROW
+    }
+    const __m256 acc[4] = { acc0, acc1, acc2, acc3 };
+    for (int j = 0; j < 4; j++) {
+        float c = 0.f;
+        for (g = 0; g < ng; g++) c = fmaf(sc[g], xsum[j][g], c);
+        out[j] = (xf_hsum8(acc[j]) - 8.f * c) * sx[j];
+    }
+#else
+    for (int j = 0; j < 4; j++) out[j] = xf_dot_i8(w, sc, xq[j], xsum[j], sx[j], I);
+#endif
+}
+
 /* ---- one expert ------------------------------------------------------------- */
 
 typedef struct {
@@ -333,9 +366,11 @@ static inline size_t xf_moe_scratch_bytes(int S, int K, int H, int F) {
  * pair with an expert, nothing summed. ctb may be the caller's (an engine that adds
  * other outputs in the same rank order, vk_tier.h) or NULL: then it is carved from
  * scratch. Returns it, or NULL when no pair has an expert (nothing written). */
-static inline float *xf_moe_compute(float *ctb_out, const float *x, int S, int K, int H, int F,
-                                    const int *idx, const XfExpert *const *experts,
-                                    int mode, void *scratch) {
+/* grouped (i8 mode only): an expert's pairs go through xf_dot_i8_x4 four at a
+ * time, each pair's bits unchanged (see there); 0 is xf_moe_compute. */
+static inline float *xf_moe_compute_ex(float *ctb_out, const float *x, int S, int K, int H, int F,
+                                       const int *idx, const XfExpert *const *experts,
+                                       int mode, void *scratch, int grouped) {
     const size_t n = (size_t)S * K;
     char *p = (char *)scratch;
 #define XF_TAKE(T, count) ((T *)p); p += (((size_t)(count) * sizeof(T)) + 63) & ~(size_t)63
@@ -385,7 +420,24 @@ static inline float *xf_moe_compute(float *ctb_out, const float *x, int S, int K
     for (int it = 0; it < nu * cF; it++) {
         int e = it / cF, c = it % cF;
         int r0 = c * rowsF, r1 = r0 + rowsF; if (r1 > F) r1 = F;
-        for (int i = head[e]; i >= 0; i = next[i]) {
+        int i = head[e];
+        while (grouped && mode && i >= 0) {           /* four pairs per weight pass */
+            int q[4], nq = 0;
+            for (int t = i; t >= 0 && nq < 4; t = next[t]) q[nq++] = t;
+            if (nq < 4) break;                        /* the tail takes the per-pair loop */
+            const int8_t *aq[4]; const float *as[4]; float ax[4];
+            for (int j = 0; j < 4; j++) { int s = q[j] / K; aq[j] = xq + (size_t)s * H; as[j] = xsum + (size_t)s * (H / XF_BLOCK); ax[j] = xsx[s]; }
+            const XfExpert *ee = experts[q[0]];
+            size_t rb = xf_row_bytes(H); int ngr = xf_groups(H);
+            for (int r = r0; r < r1; r++) {
+                float og[4], ou[4];
+                xf_dot_i8_x4(ee->g4 + (size_t)r * rb, ee->gs + (size_t)r * ngr, aq, as, ax, H, og);
+                xf_dot_i8_x4(ee->u4 + (size_t)r * rb, ee->us + (size_t)r * ngr, aq, as, ax, H, ou);
+                for (int j = 0; j < 4; j++) { g[(size_t)q[j] * F + r] = og[j]; u[(size_t)q[j] * F + r] = ou[j]; }
+            }
+            i = next[q[3]];
+        }
+        for (; i >= 0; i = next[i]) {
             int s = i / K;
             XfAct a = { x + (size_t)s * H, xq + (size_t)s * H, xsum + (size_t)s * (H / XF_BLOCK), mode ? xsx[s] : 0.f };
             xf_gate_up_rows(g + (size_t)i * F, u + (size_t)i * F, experts[i], &a, H, r0, r1, mode);
@@ -403,12 +455,34 @@ static inline float *xf_moe_compute(float *ctb_out, const float *x, int S, int K
     for (int it = 0; it < nu * cH; it++) {
         int e = it / cH, c = it % cH;
         int r0 = c * rowsH, r1 = r0 + rowsH; if (r1 > H) r1 = H;
-        for (int i = head[e]; i >= 0; i = next[i]) {
+        int i = head[e];
+        while (grouped && mode && i >= 0) {
+            int q[4], nq = 0;
+            for (int t = i; t >= 0 && nq < 4; t = next[t]) q[nq++] = t;
+            if (nq < 4) break;
+            const int8_t *aq[4]; const float *as[4]; float ax[4];
+            for (int j = 0; j < 4; j++) { aq[j] = hq + (size_t)q[j] * F; as[j] = hsum + (size_t)q[j] * (F / XF_BLOCK); ax[j] = hsx[q[j]]; }
+            const XfExpert *ee = experts[q[0]];
+            size_t rb = xf_row_bytes(F); int ngr = xf_groups(F);
+            for (int r = r0; r < r1; r++) {
+                float oy[4];
+                xf_dot_i8_x4(ee->d4 + (size_t)r * rb, ee->ds + (size_t)r * ngr, aq, as, ax, F, oy);
+                for (int j = 0; j < 4; j++) ctb[(size_t)q[j] * H + r] = oy[j];
+            }
+            i = next[q[3]];
+        }
+        for (; i >= 0; i = next[i]) {
             XfAct a = { h + (size_t)i * F, hq + (size_t)i * F, hsum + (size_t)i * (F / XF_BLOCK), mode ? hsx[i] : 0.f };
             xf_down_rows(ctb + (size_t)i * H, experts[i], &a, F, r0, r1, mode);
         }
     }
     return ctb;
+}
+
+static inline float *xf_moe_compute(float *ctb_out, const float *x, int S, int K, int H, int F,
+                                    const int *idx, const XfExpert *const *experts,
+                                    int mode, void *scratch) {
+    return xf_moe_compute_ex(ctb_out, x, S, K, H, F, idx, experts, mode, scratch, 0);
 }
 
 static inline void xf_moe_add(float *out, const float *x, int S, int K, int H, int F,

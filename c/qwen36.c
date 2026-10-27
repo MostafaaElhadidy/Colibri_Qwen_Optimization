@@ -3433,8 +3433,10 @@ static void qwen_shared_experts_cpu(Model *m, Layer *l, const float *x, int S,
  * with exactly the cache the token path leaves (measured: equal decode misses in all
  * six cells of docs/expert_cache_research_2.md §6.2). COLI_Q36_PREFILL_WAVES_ORDER=first
  * keeps first-seen order instead (the order of that report's main matrix). Every
- * expert is still read once either way; the bits do not change. */
-static int g_q36_waves = -1, g_q36_waves_chunk = 0, g_q36_waves_headroom = -1, g_q36_waves_last = 1;
+ * expert is still read once either way; the bits do not change.
+ * COLI_Q36_PREFILL_GROUPED=1 runs an expert's pairs four at a time through one weight
+ * pass (xf_dot_i8_x4): each pair's arithmetic is unchanged, so the bits are too. */
+static int g_q36_waves = -1, g_q36_waves_chunk = 0, g_q36_waves_headroom = -1, g_q36_grouped = 0, g_q36_waves_last = 1;
 static struct { uint64_t blocks, waves, experts, resident, pairs; double t_hold, t_comp; } g_wv;
 static int q36_prefill_waves(void) {
     if (g_q36_waves < 0) {
@@ -3442,6 +3444,7 @@ static int q36_prefill_waves(void) {
         p = getenv("COLI_Q36_PREFILL_WAVES_CHUNK"); g_q36_waves_chunk = p ? atoi(p) : 0;
         if (g_q36_waves_chunk < 0) g_q36_waves_chunk = 0;
         p = getenv("COLI_Q36_PREFILL_WAVES_HEADROOM"); g_q36_waves_headroom = p ? atoi(p) : -1;
+        p = getenv("COLI_Q36_PREFILL_GROUPED"); g_q36_grouped = p && *p == '1';
         p = getenv("COLI_Q36_PREFILL_WAVES_ORDER"); g_q36_waves_last = !(p && !strcmp(p, "first"));
     }
     return g_q36_waves;
@@ -3449,9 +3452,10 @@ static int q36_prefill_waves(void) {
 static void q36_waves_report(void) {
     if (g_q36_waves != 1 || !g_wv.blocks) return;
     fprintf(stderr, "[waves] %llu layer blocks, %llu waves, %llu experts (%llu resident at plan), %llu pairs"
-                    " | hold %.1f s, compute %.1f s\n",
+                    " | hold %.1f s, compute %.1f s%s\n",
             (unsigned long long)g_wv.blocks, (unsigned long long)g_wv.waves, (unsigned long long)g_wv.experts,
-            (unsigned long long)g_wv.resident, (unsigned long long)g_wv.pairs, g_wv.t_hold, g_wv.t_comp);
+            (unsigned long long)g_wv.resident, (unsigned long long)g_wv.pairs, g_wv.t_hold, g_wv.t_comp,
+            g_q36_grouped ? " (grouped)" : "");
 }
 #ifdef COLI_CACHE_INDEX_TEST
 static int *g_test_pair_seen;   /* [S*K]: how often each pair was computed */
@@ -3547,7 +3551,7 @@ static void moe_xf_waves(Model *m, int layer, const float *x, int S, float *out,
 #endif
                     /* one pair per row, K = 1: the row's output is the pair's */
                     if (++pn == P || (j == nw - 1 && nxt[i] < 0)) {
-                        xf_moe_compute(cs, xs, pn, 1, D, F, pidx, exp, mode, scratch);
+                        xf_moe_compute_ex(cs, xs, pn, 1, D, F, pidx, exp, mode, scratch, g_q36_grouped);
                         for (int q = 0; q < pn; q++)
                             memcpy(ctb + (int64_t)ppair[q] * D, cs + (int64_t)q * D, sizeof(float) * (size_t)D);
                         pn = 0;
