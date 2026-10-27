@@ -36,7 +36,7 @@ Context: `docs/expert_cache_research.md` (report) and `benchmarks/expert_cache_r
 - Logits must be **byte-identical** to the frozen original, with the flag on and off, in every cell (`check_correctness.py` must report 0 failures). With PILOT=0, hit/miss counts should also match exactly.
 - Measure as cold runs (page cache evicted), with arms **interleaved ABBA, ≥3 reps**, and identical model/cap/prompts/`N_NEW`/env. Report the bootstrap CI. Call a change "n.s." when its interval spans 0, and never claim it as a win.
 - Never benchmark while building or while another engine is running. Check `pgrep -f qwen36` first.
-- No commits or pushes unless asked. Author identity is not in git config: use `-c user.name="Mostafa Elhadidy" -c user.email=mostafaelhadidy442@gmail.com`.
+- No commits or pushes unless asked. Author identity is not in git config: use `-c user.name="Mostafa Elhadidy" -c user.email=110402955+MostafaaElhadidy@users.noreply.github.com` (the GitHub no-reply address: GitHub refuses pushes that would publish the private Gmail).
 
 ## WSL quirks
 - **RAM** is 12 GB (`.wslconfig`; the host has 16 GB). `--cap 32` ≈ 6.2 GB RSS, `--cap 12` ≈ 3.8 GB. `--cap 128` does not fit, so the CUDA expert tier (which needs cap = 128) is unusable and everything is CPU expert streaming.
