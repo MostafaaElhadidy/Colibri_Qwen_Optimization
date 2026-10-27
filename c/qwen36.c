@@ -992,6 +992,8 @@ static int qwen36_cap_for_ram(double resident_gb, double avail_gb, double ram_gb
 
 #ifdef COLI_CACHE_INDEX_TEST
 static uint64_t g_slot_index_probes;
+/* model-free tests: stands in for the container read of a miss */
+static void (*g_test_load)(Model *m, int layer, int eid, Slot *s);
 #endif
 
 /* Runtime callers hold g_pilot_mx.  Validate both sides so stale bookkeeping
@@ -2639,7 +2641,42 @@ static void unpack_int4_to_int8(int8_t *out, const uint8_t *raw, int64_t n)
     }
 }
 
+/* COLI_Q36_MISS_QD=N (N >= 2, default 0 = off): the expert_ffn path reads a
+ * layer's cache misses N at a time instead of one after another (expert_hold_batch),
+ * and every miss reads into its thread's reused buffer instead of a fresh malloc.
+ * Measured on WSL2 (docs/expert_cache_research.md): decode spent 81-94% of a token
+ * in the serial miss path, the disk gives ~4x the throughput at depth 4-8 than at 1,
+ * and N=8 cut TTFT 39-68% with byte-identical logits. Placement only: routing,
+ * compute and output are unchanged. */
+static int q36_miss_qd(void) {
+    static int qd = -1;
+    if (qd < 0) {
+        const char *p = getenv("COLI_Q36_MISS_QD");
+        qd = p ? atoi(p) : 0;
+        if (qd < 2) qd = 0;
+        if (qd > 32) qd = 32;
+    }
+    return qd;
+}
+
+/* The calling thread's read buffer for a miss, grown on demand and kept for the
+ * life of the thread: N loader threads hold N x 2.36 MB on Qwen3-Coder-30B. */
+static uint8_t *q36_miss_buf(size_t n) {
+    static _Thread_local uint8_t *buf;
+    static _Thread_local size_t cap;
+    if (n > cap) {
+        free(buf);
+        buf = malloc(n);
+        if (!buf) { fprintf(stderr, "OOM expert miss buffer (%zu bytes)\n", n); exit(1); }
+        cap = n;
+    }
+    return buf;
+}
+
 static void load_expert_merged(Model *m, int layer, int eid, Slot *s) {
+#ifdef COLI_CACHE_INDEX_TEST
+    if (g_test_load) { g_test_load(m, layer, eid, s); return; }
+#endif
     char nm[256], qsnm[256];
     int la = m->active_of[layer];   /* container stores experts under active index */
     snprintf(nm, sizeof(nm), "model.layers.%d.mlp.experts.%d.merged_weight", la, eid);
@@ -2682,7 +2719,10 @@ static void load_expert_merged(Model *m, int layer, int eid, Slot *s) {
     if (tw->nbytes == want_w / 2) {
         static int noted = 0;
         if (!noted) { fprintf(stderr, "[qwen36] int4 packed weights detected — %s\n", s->pw ? "kept int4, repacked planar for expert_ffn.h" : "unpacking to int8 in slot"); noted = 1; }
-        uint8_t *raw = (uint8_t *)malloc((size_t)(want_w / 2));
+        /* COLI_Q36_MISS_QD: the planar path never keeps raw, so it reads into the
+         * thread's reused buffer (no malloc, no fresh pages to fault in per miss) */
+        int reuse = q36_miss_qd() && s->pw;
+        uint8_t *raw = reuse ? q36_miss_buf((size_t)(want_w / 2)) : (uint8_t *)malloc((size_t)(want_w / 2));
         if (!raw) { fprintf(stderr, "OOM reading int4 expert %s\n", nm); exit(1); }
         st_read_raw(&m->S, nm, raw, 1);
         if (s->pw) {
@@ -2692,8 +2732,13 @@ static void load_expert_merged(Model *m, int layer, int eid, Slot *s) {
             xf_repack_pairs_signed(s->pw + gp,     raw + gp,     cc->inter,  cc->hidden);
             xf_repack_pairs_signed(s->pw + 2 * gp, raw + 2 * gp, cc->hidden, cc->inter);
             s->is_int4 = 1;
-            free(raw);
-            st_read_f32(&m->S, qsnm, s->gs, 0);
+            if (!reuse) free(raw);
+            /* F32 scales are their own bytes: read them straight into the slot
+             * (st_read_f32 would malloc a 288 KB bounce buffer and memcpy it) */
+            if (reuse && ts->dtype == 2 && ts->nbytes == want_s * (int64_t)sizeof(float))
+                st_read_raw(&m->S, qsnm, s->gs, 0);
+            else
+                st_read_f32(&m->S, qsnm, s->gs, 0);
             return;
         }
         unpack_int4_to_int8(s->g, raw, want_w);
@@ -2888,6 +2933,65 @@ static void expert_get(Model *m, int layer, int eid, Slot **out) { expert_fetch(
 /* expert_get for a caller that computes from the slot after the lock drops:
  * it stays resident until slot_release. */
 static Slot *expert_hold(Model *m, int layer, int eid) { Slot *s; expert_fetch(m, layer, eid, &s, 1); return s; }
+
+/* expert_hold for ids[0..n) at once (COLI_Q36_MISS_QD=qd): held[i] is ids[i]'s slot,
+ * held once per i (ids < 0 stay NULL), exactly as n expert_hold calls in order would
+ * leave them. One pass under g_pilot_mx makes the same decisions those calls make, in
+ * the same order: a resident expert is a hit; a missing one takes the slot
+ * slot_victim picks, hidden and held so neither a later pick here nor the PILOT
+ * worker can take it; a repeat of an expert reserved earlier in the pass is the hit
+ * the serial path would get once that load published. The clock values follow the
+ * same order too (a reservation's stands in for its publish), so with PILOT off the
+ * cache evicts what the serial path evicts and the hit/miss counts match. Then the
+ * reads run qd at a time, unlocked, and publish together. If no slot can be taken
+ * (every one held or loading) the rest goes through expert_hold, which waits. */
+static void expert_hold_batch(Model *m, int layer, const int *ids, int n, Slot **held, int qd) {
+    LCache *lc = &m->cache[layer]; Cfg *c = &m->c;
+    int *load_i = malloc(sizeof(int) * (size_t)n);
+    Slot **load_s = malloc(sizeof(Slot *) * (size_t)n);
+    double *load_t = malloc(sizeof(double) * (size_t)n);
+    if (!load_i || !load_s || !load_t) { fprintf(stderr, "OOM expert_hold_batch\n"); exit(1); }
+    for (int i = 0; i < n; i++) { held[i] = NULL; if (ids[i] >= 0) ehit_mark(m, layer, ids[i]); }
+    int nl = 0, i = 0;
+    pthread_mutex_lock(&g_pilot_mx);
+    for (; i < n; i++) {
+        int eid = ids[i];
+        if (eid < 0) continue;
+        Slot *hit = slot_indexed(m, layer, eid);
+        if (!hit)   /* reserved earlier in this pass: hidden, so not in the index yet */
+            for (int j = 0; j < nl; j++) if (ids[load_i[j]] == eid) { hit = load_s[j]; break; }
+        if (hit) { m->hits++; hit->used = ++m->clock; slot_hold(hit); held[i] = hit; continue; }
+        Slot *s;
+        if (lc->n < lc->cap) { s = &lc->slots[lc->n++]; slot_ensure_allocated(m, s); }
+        else {
+            int v = slot_victim(lc, layer, 0);
+            if (v < 0) v = slot_victim(lc, layer, 1);
+            if (v < 0) break;
+            s = &lc->slots[v]; s->pinned = 0;
+            if (vkt_ram_first(layer, s->eid)) vkt_ram_gave();
+        }
+        m->miss++;
+        cache_hide(m, layer, s); s->used = ++m->clock; slot_hold(s);
+        held[i] = s; load_i[nl] = i; load_s[nl] = s; nl++;
+    }
+    pthread_mutex_unlock(&g_pilot_mx);
+    #pragma omp parallel for num_threads(qd) schedule(dynamic, 1) if(nl > 1)
+    for (int j = 0; j < nl; j++) {
+        double t0 = now_s();
+        load_expert_merged(m, layer, ids[load_i[j]], load_s[j]);
+        load_t[j] = now_s() - t0;
+    }
+    pthread_mutex_lock(&g_pilot_mx);
+    for (int j = 0; j < nl; j++) {
+        int eid = ids[load_i[j]];
+        m->t_disk += load_t[j];
+        cache_publish(m, layer, load_s[j], eid);
+        load_s[j]->pinned = m->is_pinned[layer * c->n_experts + eid];
+    }
+    pthread_mutex_unlock(&g_pilot_mx);
+    for (; i < n; i++) if (ids[i] >= 0) held[i] = expert_hold(m, layer, ids[i]);
+    free(load_i); free(load_s); free(load_t);
+}
 
 static void pin_hot_experts(Model *m) {
     Cfg *c = &m->c;
@@ -3202,14 +3306,18 @@ static void moe_xf_run(Model *m, int layer, const float *x, int S, float *out, c
     void *scratch = malloc(xf_moe_scratch_bytes(per, kper, D, F));
     if (!ex || !exp || !ridx || !held || !scratch) { fprintf(stderr, "OOM moe_xf_run\n"); exit(1); }
     int timed = tm_on() && S == 1;
+    int qd = q36_miss_qd();
     for (int s0 = 0; s0 < S; s0 += per) {
         for (int k0 = 0; k0 < K; k0 += kper) {
             double t0 = timed ? tm_now() : 0;
             for (int s = 0; s < per; s++) for (int k = 0; k < kper; k++) {
                 int src = (s0 + s) * K + (k0 + k), dst = s * kper + k;
                 ridx[dst] = idx[src]; rval[dst] = val[src]; exp[dst] = NULL; held[dst] = NULL;
-                if (idx[src] < 0) continue;
-                Slot *e = held[dst] = expert_hold(m, layer, idx[src]);
+            }
+            if (qd) expert_hold_batch(m, layer, ridx, n, held, qd);   /* the run's misses, qd at a time */
+            for (int dst = 0; dst < n; dst++) {
+                if (ridx[dst] < 0) continue;
+                Slot *e = held[dst] = qd ? held[dst] : expert_hold(m, layer, ridx[dst]);
                 ex[dst].g4 = e->pw; ex[dst].u4 = e->pw + gp; ex[dst].d4 = e->pw + 2 * gp;
                 ex[dst].gs = e->gs; ex[dst].us = e->us; ex[dst].ds = e->ds;
                 exp[dst] = &ex[dst];
