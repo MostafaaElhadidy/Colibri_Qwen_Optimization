@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it and the colibri engine it is built on."
+title: "Colibri × Qwen3-Coder: faster expert loading for Mixture-of-Experts inference"
+type: software
+authors:
+  - family-names: Elhadidy
+    given-names: Mostafa
+repository-code: "https://github.com/MostafaaElhadidy/Colibri_Qwen_Optimization"
+license: Apache-2.0
+date-released: "2026-10-27"
+keywords:
+  - mixture-of-experts
+  - llm-inference
+  - expert-offloading
+  - colibri
+  - qwen3-coder
+references:
+  - type: software
+    title: colibri
+    authors:
+      - family-names: Fornaro
+        given-names: Vincenzo
+    repository-code: "https://github.com/JustVugg/colibri"
+    license: Apache-2.0

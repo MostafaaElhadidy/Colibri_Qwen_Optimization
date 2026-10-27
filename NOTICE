@@ -15,3 +15,33 @@ limitations under the License.
 
 Third-party components bundled with this software and their licenses
 are listed in THIRD_PARTY_NOTICES.md.
+
+------------------------------------------------------------------------
+Modifications
+
+This repository (Colibri_Qwen_Optimization,
+https://github.com/MostafaaElhadidy/Colibri_Qwen_Optimization) is a
+modified version of colibri (https://github.com/JustVugg/colibri),
+based on colibri commit e0db083cdc9e563e0766cc6fc661ef23c32298e0.
+
+Modifications Copyright 2026 Mostafa Elhadidy, licensed under the
+Apache License, Version 2.0, as above. Changed or added files:
+
+  c/qwen36.c                         parallel miss loading (COLI_Q36_MISS_QD),
+                                     prefill waves (COLI_Q36_PREFILL_WAVES*),
+                                     grouped kernel switch (COLI_Q36_PREFILL_GROUPED),
+                                     slot arena (COLI_Q36_SLOT_ARENA),
+                                     fault profiler (COLI_Q36_FAULT_PROF)
+  c/expert_ffn.h                     xf_moe_combine, xf_dot_i8_x4, xf_moe_compute_ex
+  c/tests/test_qwen36_cache_index.c  batch and waves tests
+  benchmarks/expert_cache_research/  benchmark kit and results (added)
+  docs/expert_cache_research*.md, docs/STATUS.md,
+  docs/colibri_optimization_results.pdf, docs/report_src/  (added)
+  assets/optimization/               README graphics (added)
+  README.md                          project README (new); the original
+                                     colibri README is README.colibri.md
+  README.*.md                        language links point to README.colibri.md
+  CLAUDE.md, CITATION.cff            (added)
+
+All new behaviour is behind environment flags that are off by default;
+with every flag off the engine produces the original's output bit for bit.
